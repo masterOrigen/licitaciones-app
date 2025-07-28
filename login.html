@@ -158,27 +158,20 @@
                 const data = await response.json();
                 const users = data.results || [];
                 
-                // Buscar usuario por email
-                const user = users.find(u => u.field_6766 === email);
+                // Buscar usuario por email (usando nombres de campo reales debido a user_field_names=true)
+                const user = users.find(u => u.Email === email);
                 
                 if (!user) {
                     return { success: false, message: 'Usuario no encontrado' };
                 }
                 
-                // En un entorno real, aquí verificaríamos el hash de la contraseña
-                // Como Baserow no permite verificar contraseñas desde el cliente,
-                // simulamos una verificación básica (esto NO es seguro en producción)
-                if (user.field_6767 === true) {
-                    // Si la contraseña está establecida (field_6767 es true)
-                    // Simulamos verificación básica (en producción esto debería hacerse en el servidor)
-                    // Esta es una simplificación para el propósito de este ejercicio
-                    if (password === 'password123') { // Contraseña hardcodeada para demostración
-                        // Guardar información del usuario en sessionStorage
-                        sessionStorage.setItem('userLoggedIn', 'true');
-                        sessionStorage.setItem('userName', user.field_6765);
-                        sessionStorage.setItem('userEmail', user.field_6766);
-                        return { success: true };
-                    }
+                // Verificar contraseña directamente (en un entorno real esto debería hacerse en el servidor)
+                if (user.Password === password) {
+                    // Guardar información del usuario en sessionStorage
+                    sessionStorage.setItem('userLoggedIn', 'true');
+                    sessionStorage.setItem('userName', user.Nombre);
+                    sessionStorage.setItem('userEmail', user.Email);
+                    return { success: true };
                 }
                 
                 return { success: false, message: 'Contraseña incorrecta' };
