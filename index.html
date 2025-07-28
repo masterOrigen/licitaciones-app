@@ -1,0 +1,2506 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Decisión Estratégica para Licitaciones v19.8 (Filtro Simplificado)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js and JSZip for file parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            /* Black background */
+            color: #e5e7eb;
+            /* text-gray-200 */
+        }
+#search-estado {
+  font-size: 14px;
+  padding: 10px 15px;
+}
+#creative-profile-selector, #media-profile-selector {
+  font-size: 14px;
+  padding: 10px 15px;
+}
+        .tab-btn {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            color: #9ca3af;
+            /* text-gray-400 */
+        }
+
+        .tab-btn.active {
+            border-color: #a3e635;
+            /* border-lime-400 */
+            color: #d9f99d;
+            /* text-lime-200 */
+            background-color: #1f2937;
+            /* bg-gray-800 */
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .kpi-card {
+            background-color: #111827;
+            /* bg-gray-900 */
+            border-radius: 1.25rem;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            border: 0px solid #374151;
+            /* border-gray-700 */
+        }
+
+        #profile-modal,
+        #search-results-modal,
+        #organism-lookup-modal {
+            display: none;
+        }
+
+        .loader {
+            border: 4px solid #374151;
+            /* border-gray-700 */
+            border-top: 4px solid #a3e635;
+            /* border-lime-400 */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        select,
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        input[type="date"],
+        textarea {
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid #4b5563;
+            /* border-gray-600 */
+            background-color: #000000;
+            /* Black */
+            color: #e5e7eb;
+            /* text-gray-200 */
+            box-shadow: inset 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            height: 2.75rem;
+            /* Altura fija para consistencia */
+            line-height: 1.25rem;
+            font-size: 0.875rem;
+            /* text-sm */
+        }
+
+        /* Asegurar que los selects tengan la misma altura */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        select:focus,
+        input:focus,
+        textarea:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            border-color: #a3e635;
+            /* border-lime-400 */
+            box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.5);
+        }
+
+        /* Estilos específicos para input de fecha */
+        input[type="date"] {
+            color-scheme: dark;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        button,
+        .button-link {
+            border-radius: 0.75rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        button:hover,
+        .button-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        #detailed-ai-analysis>div {
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+
+        #ai-strengths {
+            background-color: rgba(74, 222, 128, 0.1);
+            border-color: #22c55e;
+        }
+
+        #ai-weaknesses {
+            background-color: rgba(248, 113, 113, 0.1);
+            border-color: #ef4444;
+        }
+
+        #ai-strategic-advice {
+            background-color: rgba(96, 165, 250, 0.1);
+            border-color: #3b82f6;
+        }
+
+        #detailed-ai-analysis h5 {
+            font-size: 1.125rem;
+            margin-bottom: 0.75rem;
+        }
+
+        #detailed-ai-analysis ul {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(12, 16, 33, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 1rem;
+        }
+
+        input[type="file"] {
+            border-radius: 0.5rem;
+            border: 1px solid #4b5563;
+            /* border-gray-600 */
+        }
+
+        input[type="file"]::file-selector-button {
+            background-color: #65a30d;
+            /* bg-lime-600 */
+            color: #d9f99d;
+            /* text-lime-200 */
+            border: none;
+            padding: 0.65rem 1rem;
+            margin-right: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background-color: #4d7c0f;
+            /* bg-lime-700 */
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+    <!-- Verificación de autenticación -->
+    <script>
+        // Verificar si el usuario está autenticado
+        if (sessionStorage.getItem('userLoggedIn') !== 'true') {
+            // Si no está autenticado, redirigir a login.html
+            window.location.href = 'login.html';
+        }
+    </script>
+    
+    <!-- Barra de navegación con información de usuario -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-lime-300">Sistema de Decisión Estratégica para Licitaciones</h1>
+        <div class="flex items-center">
+            <span id="user-name" class="text-gray-300 mr-4"></span>
+            <button id="logout-btn" class="px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 transition-colors">Cerrar Sesión</button>
+        </div>
+    </div>
+    
+    <script>
+        // Mostrar nombre de usuario
+        document.getElementById('user-name').textContent = sessionStorage.getItem('userName') || 'Usuario';
+        
+        // Manejar cierre de sesión
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            // Confirmar cierre de sesión
+            Swal.fire({
+                title: '¿Cerrar Sesión?',
+                text: '¿Estás seguro de que deseas cerrar tu sesión?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cerrar sesión',
+                cancelButtonText: 'Cancelar',
+                background: '#1f2937',
+                color: '#e5e7eb',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#4b5563'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Limpiar sessionStorage
+                    sessionStorage.removeItem('userLoggedIn');
+                    sessionStorage.removeItem('userName');
+                    sessionStorage.removeItem('userEmail');
+                    
+                    // Redirigir a login.html
+                    window.location.href = 'login.html';
+                }
+            });
+        });
+    </script>
+
+    <div class="max-w-screen-2xl mx-auto">
+        <!-- Hero Section -->
+        <header class="text-center py-12 mb-10 bg-gray-900/50 rounded-3xl shadow-xl text-white border border-gray-700">
+            <h1 class="text-3xl md:text-3xl font-extrabold tracking-tight text-white">Licitaciones Gobierno</h1>
+          
+        </header>
+
+        <div id="main-content-start" class="grid grid-cols-1 xl:grid-cols-3 gap-10">
+
+            <!-- Left Panel -->
+            <aside class="xl:col-span-1 space-y-8">
+                <div class="kpi-card">
+                    <h2 class="text-1xl font-bold text-white mb-5">Búsqueda de Licitaciones</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="search-fecha" class="block text-sm font-medium text-gray-300">Fecha de
+                                Publicación</label>
+                            <input type="date" id="search-fecha" class="w-full mt-1">
+                            <p class="text-xs text-gray-400 mt-1">Busca licitaciones publicadas en la fecha
+                                especificada.</p>
+                        </div>
+                        <div>
+                            <label for="search-estado" class="block text-sm font-medium text-gray-300">Estado</label>
+                            <select id="search-estado" class="w-full mt-1">
+                                <option value="activas">Activas</option>
+                                <option value="publicada">Publicada</option>
+                                <option value="cerrada">Cerrada</option>
+                                <option value="desierta">Desierta</option>
+                                <option value="adjudicada">Adjudicada</option>
+                                <option value="revocada">Revocada</option>
+                                <option value="suspendida">Suspendida</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="search-organismo" class="block text-sm font-medium text-gray-300">Código de
+                                Organismo</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="search-organismo" class="w-full mt-1" placeholder="Ej: 694">
+                                <button id="lookup-organismo-btn" title="Buscar Organismo"
+                                    class="mt-1 bg-gray-600 text-gray-200 font-semibold px-3 py-1 rounded-lg hover:bg-gray-500 text-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="search-codigo" class="block text-sm font-medium text-gray-300">Código de
+                                Licitación (ID)</label>
+                            <input type="text" id="search-codigo" class="w-full mt-1" placeholder="Ej: 1234-5-LP25">
+                        </div>
+                        <button id="buscar-btn"
+                            class="w-full bg-lime-600 text-gray-900 font-bold text-lg py-3 rounded-lg hover:bg-lime-500 shadow-lg">
+                            BUSCAR LICITACIONES
+                        </button>
+                        <p id="mp-api-status" class="text-xs text-gray-400 mt-2 text-center"></p>
+                        
+                        <!-- Estado de APIs -->
+                        <div class="mt-3 p-2 bg-gray-800 rounded-md">
+                            <h4 class="text-xs font-medium text-gray-300 mb-1">Estado APIs:</h4>
+                            <div class="text-xs space-y-1">
+                                <div>Mercado Público: <span id="mp-status" class="text-yellow-400">Probando...</span></div>
+                                <div>Gemini AI: <span id="gemini-status" class="text-yellow-400">Probando...</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <h2 class="text-1xl font-bold text-white mb-5">Perfiles de Agencia Creativa</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="creative-profile-selector"
+                                class="block text-sm font-medium text-gray-300 mb-2">Perfil Activo</label>
+                            <div class="flex gap-3">
+                                <select id="creative-profile-selector" class="w-full"></select>
+                                <button onclick="showProfileModal('creativo')" title="Añadir Perfil Creativo"
+                                    class="bg-lime-600 text-gray-900 p-3 rounded-lg hover:bg-lime-500 font-bold text-lg flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                                <button id="edit-creative-profile-btn" title="Editar Perfil Creativo"
+                                    class="bg-gray-600 text-gray-200 p-3 rounded-lg hover:bg-gray-500 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </button>
+                                <button id="delete-creative-profile-btn" title="Eliminar Perfil Creativo"
+                                    class="bg-red-800/30 text-red-300 p-3 rounded-lg hover:bg-red-800/50 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-4 border-t border-gray-700 pt-5">
+                            <h4 class="font-semibold text-gray-200 text-lg">Perfil Activo Agencia Creativa</h4>
+                            <div id="active-creative-profile-details" class="text-sm text-gray-400 mt-3 space-y-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <h2 class="text-1xl font-bold text-white mb-5">Perfiles de Agencia de Medios</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="media-profile-selector"
+                                class="block text-sm font-medium text-gray-300 mb-2">Perfil Activo Medios</label>
+                            <div class="flex gap-3">
+                                <select id="media-profile-selector" class="w-full"></select>
+                                <button onclick="showProfileModal('medios')" title="Añadir Perfil de Medios"
+                                    class="bg-lime-600 text-gray-900 p-3 rounded-lg hover:bg-lime-500 font-bold text-lg flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                </button>
+                                <button id="edit-media-profile-btn" title="Editar Perfil de Medios"
+                                    class="bg-gray-600 text-gray-200 p-3 rounded-lg hover:bg-gray-500 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </button>
+                                <button id="delete-media-profile-btn" title="Eliminar Perfil de Medios"
+                                    class="bg-red-800/30 text-red-300 p-3 rounded-lg hover:bg-red-800/50 flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-4 border-t border-gray-700 pt-5">
+                            <h3 class="font-semibold text-gray-200 text-lg">Perfil Activo Agencia Medios</h4>
+                            <div id="active-media-profile-details" class="text-sm text-gray-400 mt-3 space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </aside>
+
+            <!-- Right Panel: Main Content -->
+            <main class="xl:col-span-2">
+                <div id="analisis-section" class="hidden">
+                    <div class="kpi-card mb-8">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h2 class="text-2xl font-bold text-white mb-2">Licitación en Análisis</h2>
+                                <p id="licitacion-analizada-nombre" class="text-lg text-lime-400 font-semibold"></p>
+                                <p id="licitacion-analizada-cliente" class="text-md text-gray-300 mb-1"></p>
+                                <p id="licitacion-analizada-id" class="text-sm text-gray-400"></p>
+                            </div>
+                            <a id="ver-en-mp-link" href="#" target="_blank"
+                                class="hidden button-link mt-1 inline-block bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-500">Ver
+                                Ficha en Mercado Público</a>
+                        </div>
+                        <input type="hidden" id="tipo-licitacion" value="integral">
+                    </div>
+                    <div class="border-b border-gray-700 mb-6">
+                        <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                            <button class="tab-btn active whitespace-nowrap py-4 px-3" data-tab="tab1">1. Análisis
+                                Previo (IA)</button>
+                            <button class="tab-btn whitespace-nowrap py-4 px-3" data-tab="tab2">2. Análisis Brief
+                                (Archivo)</button>
+                            <button class="tab-btn whitespace-nowrap py-4 px-3" data-tab="tab3">3. Calce de
+                                Requisitos</button>
+                            <button class="tab-btn whitespace-nowrap py-4 px-3" data-tab="tab4">4. Afinidad
+                                Estratégica</button>
+                            <button class="tab-btn whitespace-nowrap py-4 px-3" data-tab="tab5">5. Decisión
+                                Final</button>
+                        </nav>
+                    </div>
+
+                    <div>
+                        <div id="tab1" class="tab-content active">
+                            <h2 class="text-2xl font-bold text-white mb-4">Análisis Forense del Brief (API)</h2>
+                            <div id="ia-analysis-container-api" class="kpi-card space-y-4">
+                                <p class="text-gray-400 text-center py-8">Los resultados del análisis de la API de
+                                    Mercado Público aparecerán aquí.</p>
+                            </div>
+                        </div>
+                        <div id="tab2" class="tab-content">
+                            <h2 class="text-2xl font-bold text-white mb-4">Análisis Forense del Brief (Archivo)</h2>
+                            <div class="kpi-card space-y-4">
+                                <div>
+                                    <label for="brief-file-input"
+                                        class="block text-sm font-medium text-gray-300 mb-2">Subir archivo (.pdf, .pptx,
+                                        .txt, .md)</label>
+                                    <input type="file" id="brief-file-input" class="w-full"
+                                        accept=".pdf,.pptx,.txt,.md">
+                                </div>
+                                <button id="analyze-file-btn"
+                                    class="w-full bg-lime-600 text-gray-900 font-semibold py-3 rounded-lg hover:bg-lime-500">
+                                    Analizar Archivo
+                                </button>
+                                <p id="file-analysis-status" class="text-xs mt-2"></p>
+                            </div>
+                            <div id="ia-analysis-container-file" class="kpi-card space-y-4 mt-6">
+                                <p class="text-gray-400 text-center py-8">Los resultados del análisis del archivo
+                                    aparecerán aquí.</p>
+                            </div>
+                        </div>
+                        <div id="tab3" class="tab-content">
+                            <h2 class="text-2xl font-bold text-white mb-4">¿Calificamos para Postular?</h2>
+                            <div id="calce-container" class="kpi-card space-y-3"></div>
+                        </div>
+                        <div id="tab4" class="tab-content">
+                            <h2 class="text-2xl font-bold text-white mb-4">¿Nuestra Estrategia tiene Afinidad?</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="kpi-card space-y-4">
+                                    <div>
+                                        <label for="strategy-file-input"
+                                            class="block text-sm font-medium text-gray-300 mb-2">Subir archivo de
+                                            estrategia (.pdf, .pptx, .txt)</label>
+                                        <input type="file" id="strategy-file-input" class="w-full"
+                                            accept=".pdf,.pptx,.txt">
+                                        <p id="strategy-file-status" class="text-xs mt-2"></p>
+                                    </div>
+                                    <div>
+                                        <label for="strategy-text-input"
+                                            class="block text-sm font-medium text-gray-300">O pega el contenido de tu
+                                            estrategia aquí:</label>
+                                        <textarea id="strategy-text-input" class="w-full h-48 mt-1"
+                                            placeholder="El texto del archivo aparecerá aquí, o puedes pegarlo directamente..."></textarea>
+                                    </div>
+                                    <button id="analyze-strategy-btn"
+                                        class="w-full bg-lime-600 text-gray-900 font-semibold py-3 rounded-lg hover:bg-lime-500">
+                                        Analizar Afinidad Estratégica
+                                    </button>
+                                    <p id="strategy-analysis-status" class="text-xs mt-2"></p>
+                                </div>
+                                <div id="afinidad-estrategica-container" class="kpi-card space-y-3">
+                                    <p class="text-gray-400 text-center py-8">Sube o pega tu estrategia para ver el
+                                        análisis.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab5" class="tab-content">
+                            <h2 class="text-2xl font-bold text-white mb-4">Decisión Final y Recomendación</h2>
+                            <div id="final-decision-container" class="kpi-card space-y-6">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="placeholder-main" class="flex items-center justify-center h-96 bg-gray-900 rounded-2xl">
+                    <p class="text-gray-400 text-lg">Realiza una búsqueda para comenzar a analizar licitaciones.</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="search-results-modal" class="modal">
+        <div class="bg-gray-900 p-8 rounded-xl shadow-2xl w-full max-w-4xl border border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Resultados de Búsqueda</h2>
+                <button id="close-search-results-btn"
+                    class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            </div>
+            <div class="mb-4">
+                <label for="filter-nombre" class="block text-sm font-medium text-gray-300">Filtrar por Nombre
+                    Licitación</label>
+                <input type="text" id="filter-nombre" class="w-full mt-1" placeholder="Escribe para filtrar...">
+            </div>
+            <div id="search-results-content" class="max-h-[60vh] overflow-auto"></div>
+        </div>
+    </div>
+
+    <div id="organism-lookup-modal" class="modal">
+        <div class="bg-gray-900 p-8 rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Buscador de Códigos de Organismo</h2>
+                <button id="close-organism-lookup-btn"
+                    class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            </div>
+            <div class="mb-4">
+                <label for="organism-lookup-search" class="block text-sm font-medium text-gray-300">Buscar por Nombre de
+                    Organismo</label>
+                <input type="text" id="organism-lookup-search" class="w-full mt-1"
+                    placeholder="Ej: Ministerio de Salud">
+            </div>
+            <div id="organism-lookup-results" class="max-h-[50vh] overflow-auto"></div>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="modal">
+        <div class="bg-gray-900 p-8 rounded-xl shadow-2xl w-full max-w-2xl border border-gray-700">
+            <h2 id="modal-title" class="text-2xl font-bold text-white mb-6"></h2>
+            <div id="modal-form-container" class="space-y-4 text-sm max-h-[60vh] overflow-y-auto pr-4"></div>
+            <div class="mt-6 flex justify-end gap-4">
+                <button id="cancel-profile-btn"
+                    class="bg-gray-600 text-gray-200 font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-500">Cancelar</button>
+                <button id="save-profile-btn"
+                    class="bg-lime-600 text-gray-900 font-semibold px-5 py-2.5 rounded-lg hover:bg-lime-500">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STORE ---
+        let savedProfiles = {
+            creativo: [
+                { id: 1, type: 'creativo', name: 'Agencia Creativa Principal', montoMaximo: 200000000, tieneGarantia: true, experiencia: ['Social', 'Salud'], capacidades: ['Audiovisual', 'Digital', 'BTL'] }
+            ],
+            medios: [
+                {
+                    id: 2,
+                    type: 'medios',
+                    name: 'Unidad de Medios Digitales',
+                    montoMaximo: 300000000,
+                    tieneGarantia: true,
+                    herramientas: ['Comscore', 'Tvdata'],
+                    certificaciones: ['Google', 'Meta'],
+                    politicas: ['Inversión Regional'],
+                    economica: { boletaGarantia: true, comisionAgencia: 15, comisionPlataforma: 5 },
+                    administrativo: { equidadGenero: true, programaIntegridad: true }
+                }
+            ]
+        };
+        let activeCreativeProfileId = null;
+        let activeMediaProfileId = 2;
+        let editingProfile = { id: null, type: null };
+        let currentSearchResults = [];
+        const commonOrganisms = [
+            { code: "694", name: "Dirección de Compras y Contratación Pública" },
+            { code: "805", name: "Ministerio de Salud" },
+            { code: "806", name: "Subsecretaría de Salud Pública" },
+            { code: "807", name: "Subsecretaría de Redes Asistenciales" },
+            { code: "9999", name: "Servicio Nacional del Consumidor" },
+            { code: "11", name: "Ministerio de Educación" },
+            { code: "700", name: "Junta Nacional de Jardines Infantiles" },
+            { code: "701", name: "Junta Nacional de Auxilio Escolar y Becas" },
+            { code: "1384", name: "Servicio Nacional de Turismo" },
+            { code: "900", name: "Ministerio de Obras Públicas" },
+            { code: "13", name: "Ministerio de Vivienda y Urbanismo" },
+            { code: "1383", name: "Servicio Nacional del Adulto Mayor" },
+            { code: "1380", name: "Instituto Nacional de Deportes" },
+            { code: "690", name: "Carabineros de Chile" },
+            { code: "691", name: "Policía de Investigaciones de Chile" },
+            { code: "125", name: "Fondo Nacional de Salud (FONASA)" },
+            { code: "15", name: "Ministerio de Hacienda" },
+            { code: "16", name: "Ministerio de Economía, Fomento y Turismo" },
+            { code: "17", name: "Ministerio de Desarrollo Social y Familia" },
+            { code: "20", name: "Ministerio de Transportes y Telecomunicaciones" },
+            { code: "21", name: "Ministerio de Bienes Nacionales" },
+        ];
+
+        // App state variables
+        let mercadoPublicoApiKey = '';
+        let geminiApiKey = '';
+        let baserowApiUrl = '';
+        let baserowToken = '';
+        let baserowMediaApiUrl = '';
+        let baserowMediaToken = '';
+        let analisisCompletoBrief = null;
+        let calceResult = { passCount: 0, totalChecks: 0 };
+        let afinidadResult = { score: 0, totalObjectives: 0 };
+        let agencyDecisionText = localStorage.getItem('agencyDecisionNotes') || '';
+        
+        // Baserow integration variables
+        let baserowProfiles = [];
+        let baserowMediaProfiles = [];
+
+        // Load API keys from environment variables
+        async function loadConfig() {
+            try {
+                // Load API keys from .env file values
+                mercadoPublicoApiKey = 'FDB195F2-1639-4BFE-AB07-195A22AEBCA8';
+                geminiApiKey = 'AIzaSyBQ8kqAjexfnjCJ2wgatuPNQsburBoTFOI';
+                baserowApiUrl = 'https://baserow-production-c519.up.railway.app/api/database/rows/table/255/';
+                baserowToken = 'qiZvFWCOiFebsKdbmN6zTWGxsRsxeyX0';
+                baserowMediaApiUrl = 'https://baserow-production-c519.up.railway.app/api/database/rows/table/698/';
+                baserowMediaToken = 'qiZvFWCOiFebsKdbmN6zTWGxsRsxeyX0';
+                
+                console.log('API keys loaded successfully');
+                console.log('Mercado Público API Key:', mercadoPublicoApiKey ? 'Configured' : 'Missing');
+                console.log('Gemini API Key:', geminiApiKey ? 'Configured' : 'Missing');
+                console.log('Baserow API URL:', baserowApiUrl ? 'Configured' : 'Missing');
+                console.log('Baserow Token:', baserowToken ? 'Configured' : 'Missing');
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+                // Fallback to empty strings if config loading fails
+                mercadoPublicoApiKey = '';
+                geminiApiKey = '';
+                baserowApiUrl = '';
+                baserowToken = '';
+            }
+        }
+
+        // --- DOM ELEMENTS & LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const creativeProfileSelector = document.getElementById('creative-profile-selector');
+            const mediaProfileSelector = document.getElementById('media-profile-selector');
+            const profileModal = document.getElementById('profile-modal');
+            const cancelProfileBtn = document.getElementById('cancel-profile-btn');
+            const saveProfileBtn = document.getElementById('save-profile-btn');
+            const buscarBtn = document.getElementById('buscar-btn');
+            const tabs = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const editCreativeBtn = document.getElementById('edit-creative-profile-btn');
+            const editMediaBtn = document.getElementById('edit-media-profile-btn');
+            const deleteCreativeBtn = document.getElementById('delete-creative-profile-btn');
+            const deleteMediaBtn = document.getElementById('delete-media-profile-btn');
+            // API key inputs removed - now loaded from .env file
+            const analyzeStrategyBtn = document.getElementById('analyze-strategy-btn');
+            const searchResultsModal = document.getElementById('search-results-modal');
+            const closeSearchResultsBtn = document.getElementById('close-search-results-btn');
+            const filterNombreInput = document.getElementById('filter-nombre');
+            const analyzeFileBtn = document.getElementById('analyze-file-btn');
+            const briefFileInput = document.getElementById('brief-file-input');
+            const verEnMpLink = document.getElementById('ver-en-mp-link');
+            const lookupOrganismoBtn = document.getElementById('lookup-organismo-btn');
+            const organismLookupModal = document.getElementById('organism-lookup-modal');
+            const closeOrganismLookupBtn = document.getElementById('close-organism-lookup-btn');
+            const organismLookupSearch = document.getElementById('organism-lookup-search');
+            const organismLookupResults = document.getElementById('organism-lookup-results');
+            const strategyFileInput = document.getElementById('strategy-file-input');
+            const strategyFileStatus = document.getElementById('strategy-file-status');
+            const strategyTextInput = document.getElementById('strategy-text-input');
+
+            // Setup PDF.js worker
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+
+            // --- INITIALIZATION ---
+            async function initializeApp() {
+                await loadConfig();
+                await loadBaserowProfiles();
+                await loadBaserowMediaProfiles();
+                renderSelectors();
+                setDefaultDate();
+                renderOrganismLookup(commonOrganisms);
+                
+                // Probar conectividad de APIs después de la inicialización
+                setTimeout(testAPIs, 1000);
+            }
+            
+            // Función para cargar perfiles desde Baserow
+            async function loadBaserowProfiles() {
+                try {
+                    if (!baserowApiUrl || !baserowToken) {
+                        console.warn('Baserow API URL o token no configurados');
+                        return;
+                    }
+                    
+                    const response = await fetch(baserowApiUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Token ${baserowToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    baserowProfiles = data.results || [];
+                    console.log('Perfiles cargados desde Base de Datos:', baserowProfiles);
+                    
+                    // Seleccionar automáticamente el primer perfil de Baserow si hay perfiles disponibles
+                    if (baserowProfiles.length > 0 && (!activeCreativeProfileId || !activeCreativeProfileId.toString().startsWith('baserow_'))) {
+                        activeCreativeProfileId = `baserow_${baserowProfiles[0].id}`;
+                        console.log('Perfil activo establecido a:', activeCreativeProfileId);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error cargando perfiles desde Baserow:', error);
+                    // Fallback a perfiles locales si falla la carga
+                    baserowProfiles = [];
+                }
+            }
+            
+            // Función para cargar perfiles de medios desde Baserow tabla 698
+            async function loadBaserowMediaProfiles() {
+                try {
+                    if (!baserowMediaApiUrl || !baserowMediaToken) {
+                        console.warn('Baserow Media API URL o token no configurados');
+                        return;
+                    }
+                    
+                    const response = await fetch(baserowMediaApiUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Token ${baserowMediaToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    baserowMediaProfiles = data.results || [];
+                    console.log('Perfiles de medios cargados desde Base de Datos tabla 698:', baserowMediaProfiles);
+                    
+                    // Seleccionar automáticamente el primer perfil de medios de Baserow si hay perfiles disponibles
+                    if (baserowMediaProfiles.length > 0 && (!activeMediaProfileId || !activeMediaProfileId.toString().startsWith('baserow_media_'))) {
+                        activeMediaProfileId = `baserow_media_${baserowMediaProfiles[0].id}`;
+                        console.log('Perfil de medios activo establecido a:', activeMediaProfileId);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error cargando perfiles de medios desde Baserow:', error);
+                    // Fallback a perfiles locales si falla la carga
+                    baserowMediaProfiles = [];
+                }
+            }
+            
+            // Función de prueba de APIs
+            async function testAPIs() {
+                console.log('Probando conectividad de APIs...');
+                
+                // Test Gemini API
+                try {
+                    const testPrompt = 'Responde solo con: {"test": "ok"}';
+                    const geminiResult = await callGeminiAPI(testPrompt);
+                    console.log('✅ Gemini API: Conectada correctamente', geminiResult);
+                    document.getElementById('gemini-status').textContent = '✅ Conectada';
+                    document.getElementById('gemini-status').className = 'text-green-400';
+                } catch (error) {
+                    console.error('❌ Gemini API Error:', error);
+                    document.getElementById('gemini-status').textContent = '❌ Error: ' + error.message;
+                    document.getElementById('gemini-status').className = 'text-red-400';
+                }
+                
+                // Test Mercado Público API
+                try {
+                    console.log('Probando API de Mercado Público con ticket:', mercadoPublicoApiKey);
+                    const testUrl = `https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.jsonp?ticket=${mercadoPublicoApiKey}&fecha=01012024&callback=testMPCallback`;
+                    
+                    window.testMPCallback = (data) => {
+                        console.log('✅ Mercado Público API: Respuesta recibida', data);
+                        document.getElementById('mp-status').textContent = '✅ Conectada';
+                        document.getElementById('mp-status').className = 'text-green-400';
+                        
+                        // Limpiar script de prueba
+                        const scripts = document.querySelectorAll('script[src*="mercadopublico.cl"]');
+                        scripts.forEach(s => s.remove());
+                    };
+                    
+                    const script = document.createElement('script');
+                    script.src = testUrl;
+                    script.onerror = () => {
+                        console.error('❌ Mercado Público API: Error de red');
+                        document.getElementById('mp-status').textContent = '❌ Error de conexión';
+                        document.getElementById('mp-status').className = 'text-red-400';
+                    };
+                    document.body.appendChild(script);
+                    
+                    // Timeout para detectar si no hay respuesta
+                    setTimeout(() => {
+                        if (document.getElementById('mp-status').textContent === 'Probando...') {
+                            document.getElementById('mp-status').textContent = '❌ Sin respuesta (timeout)';
+                            document.getElementById('mp-status').className = 'text-red-400';
+                        }
+                    }, 10000);
+                    
+                } catch (error) {
+                    console.error('❌ Mercado Público API Error:', error);
+                    document.getElementById('mp-status').textContent = '❌ Error: ' + error.message;
+                    document.getElementById('mp-status').className = 'text-red-400';
+                }
+            }
+
+            function setDefaultDate() {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+                const day = String(today.getDate()).padStart(2, '0');
+                document.getElementById('search-fecha').value = `${year}-${month}-${day}`;
+            }
+
+            // --- PROFILE MANAGEMENT ---
+            function renderSelectors() {
+                renderCreativeProfileSelector();
+                renderMediaProfileSelector();
+                renderActiveProfileDetails();
+            }
+            
+            // Nueva función específica para el selector de perfiles creativos
+            function renderCreativeProfileSelector() {
+                creativeProfileSelector.innerHTML = '';
+                
+                // Solo agregar perfiles de Baserow
+                baserowProfiles.forEach(profile => {
+                    const option = document.createElement('option');
+                    option.value = `baserow_${profile.id}`;
+                    option.textContent = profile.field_2368; // Nombre del perfil
+                    if (`baserow_${profile.id}` === activeCreativeProfileId) {
+                        option.selected = true;
+                    }
+                    creativeProfileSelector.appendChild(option);
+                });
+            }
+            
+            // Nueva función específica para el selector de perfiles de medios
+            function renderMediaProfileSelector() {
+                mediaProfileSelector.innerHTML = '';
+                
+                // Solo agregar perfiles de medios de Baserow tabla 698
+                baserowMediaProfiles.forEach(profile => {
+                    const option = document.createElement('option');
+                    option.value = `baserow_media_${profile.id}`;
+                    option.textContent = profile.field_6754; // Campo field_6754 para el nombre del medio
+                    if (`baserow_media_${profile.id}` === activeMediaProfileId) {
+                        option.selected = true;
+                    }
+                    mediaProfileSelector.appendChild(option);
+                });
+            }
+
+            function renderProfileSelector(selector, type, activeId) {
+                selector.innerHTML = '';
+                savedProfiles[type].forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = p.name;
+                    if (p.id === activeId) option.selected = true;
+                    selector.appendChild(option);
+                });
+            }
+
+            function renderActiveProfileDetails() {
+                let creativeProfile = null;
+                
+                // Buscar en perfiles de Baserow
+                if (typeof activeCreativeProfileId === 'string' && activeCreativeProfileId.startsWith('baserow_')) {
+                    const baserowId = parseInt(activeCreativeProfileId.replace('baserow_', ''));
+                    creativeProfile = baserowProfiles.find(p => p.id === baserowId);
+                    
+                    if (creativeProfile) {
+                        const experienciaText = creativeProfile.field_2370?.map(exp => exp.value).join(', ') || 'No especificada';
+                        const capacidadesText = creativeProfile.field_6749?.map(cap => cap.value).join(', ') || 'No especificadas';
+                        const generalText = creativeProfile.field_6750?.map(gen => gen.value).join(', ') || 'No especificado';
+                        
+                        document.getElementById('active-creative-profile-details').innerHTML = `
+                            <p><strong>Nombre:</strong> ${creativeProfile.field_2368}</p>
+                            <p><strong>Monto Máx:</strong> $${parseInt(creativeProfile.field_2369 || 0).toLocaleString('es-CL')}</p>
+                            <p><strong>Experiencia:</strong> ${experienciaText}</p>
+                            <p><strong>Capacidades:</strong> ${capacidadesText}</p>
+                            <p><strong>General:</strong> ${generalText}</p>
+                            <p class="text-xs text-blue-400 mt-2">📡 Perfil desde Base de Datos</p>
+                        `;
+                    }
+                } else {
+                    // Buscar en perfiles locales
+                    creativeProfile = savedProfiles.creativo.find(p => p.id === activeCreativeProfileId);
+                    if (creativeProfile) {
+                        document.getElementById('active-creative-profile-details').innerHTML = `
+                            <p><strong>Nombre:</strong> ${creativeProfile.name}</p>
+                            <p><strong>Monto Máx:</strong> $${creativeProfile.montoMaximo.toLocaleString('es-CL')}</p>
+                            <p class="text-xs text-gray-400 mt-2">💾 Perfil local</p>
+                        `;
+                    }
+                }
+                
+                if (!creativeProfile) {
+                    document.getElementById('active-creative-profile-details').innerHTML = '<p>No hay perfil seleccionado.</p>';
+                }
+                
+                // Manejar perfiles de medios tanto de Baserow como locales
+                let mediaProfile = null;
+                
+                if (typeof activeMediaProfileId === 'string' && activeMediaProfileId.startsWith('baserow_media_')) {
+                     const baserowId = parseInt(activeMediaProfileId.replace('baserow_media_', ''));
+                     mediaProfile = baserowMediaProfiles.find(p => p.id === baserowId);
+                     
+                     if (mediaProfile) {
+                          const herramientasText = mediaProfile.field_6756?.map(h => h.value).join(', ') || 'No especificado';
+                          const certificacionesText = mediaProfile.field_6757?.map(c => c.value).join(', ') || 'No especificado';
+                          const politicasText = mediaProfile.field_6759?.map(p => p.value).join(', ') || 'No especificado';
+                          const economicaText = mediaProfile.field_6760?.map(e => e.value).join(', ') || 'No especificado';
+                          const administrativoText = mediaProfile.field_6763?.map(a => a.value).join(', ') || 'No especificado';
+                          const generalText = mediaProfile.field_6764?.map(g => g.value).join(', ') || 'No especificado';
+                          
+                          document.getElementById('active-media-profile-details').innerHTML = `
+                              <p><strong>Nombre:</strong> ${mediaProfile.field_6754}</p>
+                              <p><strong>Monto Máx:</strong> $${parseInt(mediaProfile.field_6755 || 0).toLocaleString('es-CL')}</p>
+                              <p><strong>Herramientas:</strong> ${herramientasText}</p>
+                              <p><strong>Certificaciones:</strong> ${certificacionesText}</p>
+                              <p><strong>Políticas:</strong> ${politicasText}</p>
+                              <p><strong>Económica:</strong> ${economicaText}</p>
+                              <p><strong>% Comisión:</strong> ${mediaProfile.field_6761 || 'No especificado'}%</p>
+                              <p><strong>% Administración:</strong> ${mediaProfile.field_6762 || 'No especificado'}%</p>
+                              <p><strong>Administrativo:</strong> ${administrativoText}</p>
+                              <p><strong>General:</strong> ${generalText}</p>
+                              <p class="text-xs text-blue-400 mt-2">📡 Perfil desde Base de Datos</p>
+                          `;
+                     } else {
+                         document.getElementById('active-media-profile-details').innerHTML = '<p>No hay perfil seleccionado.</p>';
+                     }
+                } else {
+                    // Perfiles locales
+                    mediaProfile = savedProfiles.medios.find(p => p.id === activeMediaProfileId);
+                    document.getElementById('active-media-profile-details').innerHTML = mediaProfile ? 
+                        `<p><strong>Nombre:</strong> ${mediaProfile.name}</p><p><strong>Monto Máx:</strong> $${mediaProfile.montoMaximo.toLocaleString('es-CL')}</p>` : 
+                        '<p>No hay perfil seleccionado.</p>';
+                }
+            }
+
+            window.showProfileModal = function (type, profileId = null) {
+                editingProfile = { id: profileId, type: type };
+                const modalFormContainer = document.getElementById('modal-form-container');
+                const modalTitle = document.getElementById('modal-title');
+                let profileData = {};
+                
+                if (profileId && type === 'creativo') {
+                    if (typeof profileId === 'string' && profileId.startsWith('baserow_')) {
+                        // Es un perfil de Baserow
+                        const baserowId = parseInt(profileId.replace('baserow_', ''));
+                        const baserowProfile = baserowProfiles.find(p => p.id === baserowId);
+                        if (baserowProfile) {
+                            profileData = {
+                                name: baserowProfile.field_2368,
+                                montoMaximo: parseInt(baserowProfile.field_2369 || 0),
+                                experiencia: baserowProfile.field_2370?.map(exp => exp.value) || [],
+                                capacidades: baserowProfile.field_6749?.map(cap => cap.value) || [],
+                                tieneGarantia: baserowProfile.field_6750?.some(gen => gen.value === 'Emitir Boletas de Garantía') || false
+                            };
+                        }
+                    } else {
+                        // Es un perfil local
+                        profileData = savedProfiles[type].find(p => p.id === profileId) || {};
+                    }
+                } else if (profileId && type === 'medios') {
+                    if (typeof profileId === 'string' && profileId.startsWith('baserow_media_')) {
+                        // Es un perfil de medios de Baserow
+                        const baserowId = parseInt(profileId.replace('baserow_media_', ''));
+                        const baserowMediaProfile = baserowMediaProfiles.find(p => p.id === baserowId);
+                        if (baserowMediaProfile) {
+                            profileData = {
+                                name: baserowMediaProfile.field_6754, // Nombre
+                                montoMaximo: parseInt(baserowMediaProfile.field_6755 || 0), // Monto
+                                herramientas: baserowMediaProfile.field_6756?.map(tool => tool.value) || [],
+                                certificaciones: baserowMediaProfile.field_6757?.map(cert => cert.value) || [],
+                                politicas: baserowMediaProfile.field_6759?.map(pol => pol.value) || [],
+                                economica: {
+                                    boletaGarantia: baserowMediaProfile.field_6760?.some(bol => bol.value === 'Boleta de garantía de hasta el 10%') || false,
+                                    comisionAgencia: parseFloat(baserowMediaProfile.field_6761 || 0),
+                                    comisionPlataforma: parseFloat(baserowMediaProfile.field_6762 || 0)
+                                },
+                                administrativo: {
+                                    equidadGenero: baserowMediaProfile.field_6763?.some(adm => adm.value === 'Programas de equidad de género / Sello Mujer') || false,
+                                    programaIntegridad: baserowMediaProfile.field_6763?.some(adm => adm.value === 'Programa de Integridad') || false
+                                },
+                                tieneGarantia: baserowMediaProfile.field_6764?.some(gen => gen.value === 'Emitir Boletas de Garantía') || false
+                            };
+                        }
+                    } else {
+                        // Es un perfil local
+                        profileData = savedProfiles[type].find(p => p.id === profileId) || {};
+                    }
+                } else if (profileId) {
+                    profileData = savedProfiles[type].find(p => p.id === profileId) || {};
+                }
+
+                // Actualizar el título del modal según el tipo de perfil que se está editando
+                if (profileId) {
+                    modalTitle.textContent = type === 'creativo' ? 'Editar Perfil Creativo' : 'Editar Perfil de Medios';
+                } else {
+                    modalTitle.textContent = `Crear Nuevo Perfil de ${type === 'creativo' ? 'Creatividad' : 'Medios'}`;
+                }
+
+                let formHtml = `
+            <div><label class="block text-sm font-medium text-gray-300 mb-2">Nombre del Perfil</label><input type="text" id="modal-name" value="${profileData.name || ''}" class="w-full"></div>
+            <div><label class="block text-sm font-medium text-gray-300 mb-2">Monto Máx. Contrato (CLP)</label><input type="number" id="modal-monto" value="${profileData.montoMaximo || 0}" class="w-full"></div>
+        `;
+
+                if (type === 'creativo') {
+                    formHtml += `
+                <div><h3 class="text-lg font-semibold text-white mb-3">Experiencia</h3>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-exp-social" class="h-4 w-4 rounded" ${profileData.experiencia?.includes('Social') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Social</span></label>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-exp-salud" class="h-4 w-4 rounded" ${profileData.experiencia?.includes('Salud') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Salud</span></label>
+                </div>
+                <div><h3 class="text-lg font-semibold text-white mb-3">Capacidades</h3>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-cap-audio" class="h-4 w-4 rounded" ${profileData.capacidades?.includes('Audiovisual') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Audiovisual</span></label>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-cap-digital" class="h-4 w-4 rounded" ${profileData.capacidades?.includes('Digital') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Digital</span></label>
+                </div>
+            `;
+                } else { // medios
+                    formHtml += `
+                <div><h3 class="text-lg font-semibold text-white mb-3">Herramientas</h3>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-tool-comscore" class="h-4 w-4 rounded" ${profileData.herramientas?.includes('Comscore') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Comscore</span></label>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-tool-admetricks" class="h-4 w-4 rounded" ${profileData.herramientas?.includes('Adsmetricks') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Adsmetricks</span></label>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-tool-tvdata" class="h-4 w-4 rounded" ${profileData.herramientas?.includes('Tvdata') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Tvdata</span></label>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-tool-poppy" class="h-4 w-4 rounded" ${profileData.herramientas?.includes('Poppy') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Poppy</span></label>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-tool-tgi" class="h-4 w-4 rounded" ${profileData.herramientas?.includes('TGI') ? 'checked' : ''}> <span class="ml-2 text-gray-300">TGI</span></label>
+                </div>
+                <div><h3 class="text-lg font-semibold text-white mb-3">Certificaciones</h3>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-cert-meta" class="h-4 w-4 rounded" ${profileData.certificaciones?.includes('Meta') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Meta</span></label>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-cert-google" class="h-4 w-4 rounded" ${profileData.certificaciones?.includes('Google') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Google</span></label>
+                    <label class="flex items-center mb-2"><input type="checkbox" id="modal-cert-tvdata" class="h-4 w-4 rounded" ${profileData.certificaciones?.includes('Tvdata') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Tvdata</span></label>
+                </div>
+                <div><h3 class="text-lg font-semibold text-white mb-3">Políticas</h3>
+                     <label class="flex items-center mb-2"><input type="checkbox" id="modal-pol-regional" class="h-4 w-4 rounded" ${profileData.politicas?.includes('Inversión Regional') ? 'checked' : ''}> <span class="ml-2 text-gray-300">Inversión Regional</span></label>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-white mb-3">Económica</h3>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" id="modal-econ-boleta" class="h-4 w-4 rounded" ${profileData.economica?.boletaGarantia ? 'checked' : ''}>
+                        <span class="ml-2 text-gray-300">Boleta de garantía de hasta el 10%</span>
+                    </label>
+                    <div class="mt-2">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Porcentaje comisión de agencia (%)</label>
+                        <input type="number" id="modal-econ-comision-agencia" value="${profileData.economica?.comisionAgencia || 0}" class="w-full">
+                    </div>
+                    <div class="mt-2">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Comisión de administración de plataforma (%)</label>
+                        <input type="number" id="modal-econ-comision-plataforma" value="${profileData.economica?.comisionPlataforma || 0}" class="w-full">
+                    </div>
+                </div>
+                 <div>
+                    <h3 class="text-lg font-semibold text-white mb-3">Administrativo</h3>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" id="modal-admin-equidad" class="h-4 w-4 rounded" ${profileData.administrativo?.equidadGenero ? 'checked' : ''}>
+                        <span class="ml-2 text-gray-300">Programas de equidad de género / Sello Mujer</span>
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" id="modal-admin-integridad" class="h-4 w-4 rounded" ${profileData.administrativo?.programaIntegridad ? 'checked' : ''}>
+                        <span class="ml-2 text-gray-300">Programa de Integridad</span>
+                    </label>
+                </div>
+            `;
+                }
+                formHtml += `<div><h3 class="text-lg font-semibold text-white mb-3">General</h3><label class="flex items-center mb-2"><input type="checkbox" id="modal-garantia" class="h-4 w-4 rounded" ${profileData.tieneGarantia ? 'checked' : ''}> <span class="ml-2 text-gray-300">Emitir Boletas de Garantía</span></label></div>`;
+
+                modalFormContainer.innerHTML = formHtml;
+                profileModal.style.display = 'flex';
+            }
+
+            function hideProfileModal() {
+                profileModal.style.display = 'none';
+            }
+
+            // Función para crear un nuevo perfil en Baserow
+            async function createProfileInBaserow(profileData) {
+                try {
+                    if (!baserowApiUrl || !baserowToken) {
+                        throw new Error('Configuración de Baserow no disponible');
+                    }
+
+                    // Preparar datos para Baserow usando los nombres de campo correctos
+                    const baserowData = {
+                        field_2368: profileData.name, // Nombre
+                        field_2369: profileData.montoMaximo, // Monto (como número)
+                        field_2370: profileData.experiencia, // Experiencia (array simple)
+                        field_6749: profileData.capacidades, // Capacidades (array simple)
+                        field_6750: profileData.general || [] // General (array simple)
+                    };
+
+                    console.log('Datos a enviar a Baserow:', baserowData);
+
+                    const response = await fetch(baserowApiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Token ${baserowToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(baserowData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+
+                    const newProfile = await response.json();
+                    console.log('Perfil creado en Baserow:', newProfile);
+                    return newProfile;
+
+                } catch (error) {
+                    console.error('Error creando perfil en Baserow:', error);
+                    throw error;
+                }
+            }
+
+            async function updateProfileInBaserow(profileId, profileData) {
+                try {
+                    const baserowData = {
+                        field_2368: profileData.name, // Nombre
+                        field_2369: profileData.montoMaximo, // Monto (como número)
+                        field_2370: profileData.experiencia, // Experiencia (array simple)
+                        field_6749: profileData.capacidades, // Capacidades (array simple)
+                        field_6750: profileData.general || [] // General (array simple)
+                    };
+
+                    console.log('Datos a actualizar en Baserow:', baserowData);
+
+                    const response = await fetch(`${baserowApiUrl}${profileId}/`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Token ${baserowToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(baserowData)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorData}`);
+                    }
+
+                    const updatedProfile = await response.json();
+                    console.log('Perfil actualizado en Baserow:', updatedProfile);
+                    return updatedProfile;
+                } catch (error) {
+                    console.error('Error actualizando perfil en Baserow:', error);
+                    throw error;
+                }
+            }
+
+            async function createMediaProfileInBaserow(profileData) {
+                try {
+                    if (!baserowMediaApiUrl || !baserowMediaToken) {
+                        throw new Error('Configuración de Baserow para medios no disponible');
+                    }
+
+                    // Preparar datos para Baserow tabla 698 usando los nombres de campo correctos
+                    const baserowData = {
+                        field_6754: profileData.name, // Nombre
+                        field_6755: profileData.montoMaximo.toString(), // Monto
+                        field_6761: profileData.economica.comisionAgencia.toString(), // % Comisión
+                        field_6762: profileData.economica.comisionPlataforma.toString() // % Administración
+                    };
+
+                    // Solo agregar arrays si tienen contenido - enviar solo los IDs
+                    if (profileData.herramientas && profileData.herramientas.length > 0) {
+                        baserowData.field_6756 = profileData.herramientas.map(item => parseInt(item) || item);
+                    }
+                    if (profileData.certificaciones && profileData.certificaciones.length > 0) {
+                        baserowData.field_6757 = profileData.certificaciones.map(item => parseInt(item) || item);
+                    }
+                    if (profileData.politicas && profileData.politicas.length > 0) {
+                        baserowData.field_6759 = profileData.politicas.map(item => parseInt(item) || item);
+                    }
+                    if (profileData.economica?.boletaGarantia) {
+                        baserowData.field_6760 = ['Boleta de garantía de hasta el 10%'];
+                    }
+                    if (profileData.tieneGarantia) {
+                        baserowData.field_6764 = ['Emitir Boletas de Garantía'];
+                    }
+
+                    // Llenar campo administrativo según checkboxes
+                    const administrativoArray = [];
+                    if (profileData.administrativo?.equidadGenero) {
+                        administrativoArray.push('Programas de equidad de género / Sello Mujer');
+                    }
+                    if (profileData.administrativo?.programaIntegridad) {
+                        administrativoArray.push('Programa de Integridad');
+                    }
+                    if (administrativoArray.length > 0) {
+                        baserowData.field_6763 = administrativoArray;
+                    }
+
+                    console.log('Datos a enviar a Baserow medios:', baserowData);
+
+                    const response = await fetch(baserowMediaApiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Token ${baserowMediaToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(baserowData)
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Error response from Baserow:', errorText);
+                        throw new Error(`Error HTTP: ${response.status} - ${errorText}`);
+                    }
+
+                    const newProfile = await response.json();
+                    console.log('Perfil de medios creado en Baserow:', newProfile);
+                    return newProfile;
+
+                } catch (error) {
+                    console.error('Error creando perfil de medios en Baserow:', error);
+                    throw error;
+                }
+            }
+            
+            async function updateMediaProfileInBaserow(profileId, profileData) {
+                try {
+                    if (!baserowMediaApiUrl || !baserowMediaToken) {
+                        throw new Error('Configuración de Baserow para medios no disponible');
+                    }
+                    
+                    // Preparar datos para Baserow tabla 698 usando los nombres de campo correctos
+                    const baserowData = {
+                        field_6754: profileData.name, // Nombre
+                        field_6755: profileData.montoMaximo.toString(), // Monto
+                        field_6761: profileData.economica.comisionAgencia.toString(), // % Comisión
+                        field_6762: profileData.economica.comisionPlataforma.toString() // % Administración
+                    };
+
+                    // Solo agregar arrays si tienen contenido - enviar solo los IDs
+                    if (profileData.herramientas && profileData.herramientas.length > 0) {
+                        baserowData.field_6756 = profileData.herramientas.map(item => parseInt(item) || item);
+                    } else {
+                        baserowData.field_6756 = [];
+                    }
+                    
+                    if (profileData.certificaciones && profileData.certificaciones.length > 0) {
+                        baserowData.field_6757 = profileData.certificaciones.map(item => parseInt(item) || item);
+                    } else {
+                        baserowData.field_6757 = [];
+                    }
+                    
+                    if (profileData.politicas && profileData.politicas.length > 0) {
+                        baserowData.field_6759 = profileData.politicas.map(item => parseInt(item) || item);
+                    } else {
+                        baserowData.field_6759 = [];
+                    }
+                    
+                    // Manejar campos booleanos/arrays específicos
+                    if (profileData.economica?.boletaGarantia) {
+                        baserowData.field_6760 = ['Boleta de garantía de hasta el 10%'];
+                    } else {
+                        baserowData.field_6760 = [];
+                    }
+                    
+                    if (profileData.tieneGarantia) {
+                        baserowData.field_6764 = ['Emitir Boletas de Garantía'];
+                    } else {
+                        baserowData.field_6764 = [];
+                    }
+
+                    // Llenar campo administrativo según checkboxes
+                    const administrativoArray = [];
+                    if (profileData.administrativo?.equidadGenero) {
+                        administrativoArray.push('Programas de equidad de género / Sello Mujer');
+                    }
+                    if (profileData.administrativo?.programaIntegridad) {
+                        administrativoArray.push('Programa de Integridad');
+                    }
+                    baserowData.field_6763 = administrativoArray;
+
+                    console.log('Datos a actualizar en Baserow medios:', baserowData);
+
+                    const response = await fetch(`${baserowMediaApiUrl}${profileId}/`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Token ${baserowMediaToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(baserowData)
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Error response from Baserow:', errorText);
+                        throw new Error(`Error HTTP: ${response.status} - ${errorText}`);
+                    }
+
+                    const updatedProfile = await response.json();
+                    console.log('Perfil de medios actualizado en Baserow:', updatedProfile);
+                    return updatedProfile;
+
+                } catch (error) {
+                    console.error('Error actualizando perfil de medios en Baserow:', error);
+                    throw error;
+                }
+            }
+            
+            async function deleteMediaProfileFromBaserow(profileId) {
+                try {
+                    if (!baserowMediaApiUrl || !baserowMediaToken) {
+                        throw new Error('Configuración de Baserow para medios no disponible');
+                    }
+                    
+                    console.log(`Eliminando perfil de medios con ID ${profileId} de Baserow`);
+                    
+                    const response = await fetch(`${baserowMediaApiUrl}${profileId}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Token ${baserowMediaToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        // Para DELETE, un 204 No Content es éxito pero no tiene cuerpo
+                        if (response.status !== 204) {
+                            const errorText = await response.text();
+                            console.error('Error response from Baserow:', errorText);
+                            throw new Error(`Error HTTP: ${response.status} - ${errorText}`);
+                        }
+                    }
+                    
+                    console.log(`Perfil de medios con ID ${profileId} eliminado exitosamente de Baserow`);
+                    return true;
+                    
+                } catch (error) {
+                    console.error('Error eliminando perfil de medios en Baserow:', error);
+                    throw error;
+                }
+            }
+
+            // Función para eliminar un perfil creativo de Baserow
+            async function deleteCreativeProfileFromBaserow(profileId) {
+                try {
+                    if (!baserowApiUrl || !baserowToken) {
+                        throw new Error('Baserow API URL o token no configurados');
+                    }
+                    
+                    // Construir URL para eliminar el perfil específico
+                    const deleteUrl = `${baserowApiUrl}${profileId}/`;
+                    
+                    const response = await fetch(deleteUrl, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Token ${baserowToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        // Para DELETE, un 204 No Content es éxito
+                        if (response.status !== 204) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(`Error HTTP: ${response.status} - ${JSON.stringify(errorData)}`);
+                        }
+                    }
+                    
+                    console.log(`Perfil creativo ${profileId} eliminado exitosamente de Baserow`);
+                    return true;
+                    
+                } catch (error) {
+                    console.error('Error eliminando perfil creativo en Baserow:', error);
+                    throw error;
+                }
+            }
+
+            async function saveProfile() {
+                const { id, type } = editingProfile;
+                const name = document.getElementById('modal-name').value;
+                const monto = parseInt(document.getElementById('modal-monto').value, 10);
+                const garantia = document.getElementById('modal-garantia').checked;
+
+                let newProfileData = { name, montoMaximo: monto, tieneGarantia: garantia };
+
+                if (type === 'creativo') {
+                    newProfileData.experiencia = [];
+                    if (document.getElementById('modal-exp-social').checked) newProfileData.experiencia.push('Social');
+                    if (document.getElementById('modal-exp-salud').checked) newProfileData.experiencia.push('Salud');
+                    newProfileData.capacidades = [];
+                    if (document.getElementById('modal-cap-audio').checked) newProfileData.capacidades.push('Audiovisual');
+                    if (document.getElementById('modal-cap-digital').checked) newProfileData.capacidades.push('Digital');
+                    newProfileData.general = [];
+                    if (document.getElementById('modal-garantia').checked) newProfileData.general.push('Emitir Boletas de Garantía');
+                    
+                    // Si es un nuevo perfil creativo, crearlo en Baserow
+                    if (!id) {
+                        try {
+                            const baserowProfile = await createProfileInBaserow(newProfileData);
+                            activeCreativeProfileId = `baserow_${baserowProfile.id}`;
+                            
+                            // Recargar perfiles desde Baserow para actualizar la lista
+                            await loadBaserowProfiles();
+                            renderSelectors();
+                            hideProfileModal();
+                            
+                            // Mostrar SweetAlert de éxito
+                            Swal.fire({
+                                title: '¡Perfil Creado!',
+                                text: `El perfil "${newProfileData.name}" ha sido creado exitosamente en la base de datos.`,
+                                icon: 'success',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#a3e635'
+                            });
+                            return;
+                        } catch (error) {
+                            // Mostrar SweetAlert de error
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error al crear el perfil en la Base de datos: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#ef4444'
+                            });
+                            return;
+                        }
+                    } else if (typeof id === 'string' && id.startsWith('baserow_')) {
+                        // Es una actualización de perfil de Baserow
+                        try {
+                            const baserowId = parseInt(id.replace('baserow_', ''));
+                            await updateProfileInBaserow(baserowId, newProfileData);
+                            
+                            // Recargar perfiles desde Baserow para actualizar la lista
+                            await loadBaserowProfiles();
+                            renderSelectors();
+                            hideProfileModal();
+                            
+                            // Mostrar SweetAlert de éxito
+                            Swal.fire({
+                                title: '¡Perfil Actualizado!',
+                                text: `El perfil "${newProfileData.name}" ha sido actualizado exitosamente en la Base de Datos.`,
+                                icon: 'success',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#a3e635'
+                            });
+                            return;
+                        } catch (error) {
+                            // Mostrar SweetAlert de error
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error al actualizar el perfil en Baserow: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#ef4444'
+                            });
+                            return;
+                        }
+                    }
+                } else { // medios
+                    newProfileData.herramientas = [];
+                    if (document.getElementById('modal-tool-comscore').checked) newProfileData.herramientas.push('Comscore');
+                    if (document.getElementById('modal-tool-admetricks').checked) newProfileData.herramientas.push('Adsmetricks');
+                    if (document.getElementById('modal-tool-tvdata').checked) newProfileData.herramientas.push('Tvdata');
+                    if (document.getElementById('modal-tool-poppy').checked) newProfileData.herramientas.push('Poppy');
+                    if (document.getElementById('modal-tool-tgi').checked) newProfileData.herramientas.push('TGI');
+
+                    newProfileData.certificaciones = [];
+                    if (document.getElementById('modal-cert-meta').checked) newProfileData.certificaciones.push('Meta');
+                    if (document.getElementById('modal-cert-google').checked) newProfileData.certificaciones.push('Google');
+                    if (document.getElementById('modal-cert-tvdata').checked) newProfileData.certificaciones.push('Tvdata');
+
+                    newProfileData.politicas = [];
+                    if (document.getElementById('modal-pol-regional').checked) newProfileData.politicas.push('Inversión Regional');
+
+                    newProfileData.economica = {
+                        boletaGarantia: document.getElementById('modal-econ-boleta').checked,
+                        comisionAgencia: parseFloat(document.getElementById('modal-econ-comision-agencia').value) || 0,
+                        comisionPlataforma: parseFloat(document.getElementById('modal-econ-comision-plataforma').value) || 0,
+                    };
+
+                    newProfileData.administrativo = {
+                        equidadGenero: document.getElementById('modal-admin-equidad').checked,
+                        programaIntegridad: document.getElementById('modal-admin-integridad').checked,
+                    };
+                    
+                    // Si es un nuevo perfil de medios, crearlo en Baserow
+                    if (!id) {
+                        try {
+                            const baserowMediaProfile = await createMediaProfileInBaserow(newProfileData);
+                            activeMediaProfileId = `baserow_media_${baserowMediaProfile.id}`;
+                            
+                            // Recargar perfiles desde Baserow para actualizar la lista
+                            await loadBaserowMediaProfiles();
+                            renderSelectors();
+                            hideProfileModal();
+                            
+                            // Mostrar SweetAlert de éxito
+                            Swal.fire({
+                                title: '¡Perfil Creado!',
+                                text: `El perfil de medios "${newProfileData.name}" ha sido creado exitosamente en la base de datos.`,
+                                icon: 'success',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#a3e635'
+                            });
+                            return;
+                        } catch (error) {
+                            // Mostrar SweetAlert de error
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error al crear el perfil de medios en la Base de datos: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#ef4444'
+                            });
+                            return;
+                        }
+                    } else if (typeof id === 'string' && id.startsWith('baserow_media_')) {
+                        // Es una actualización de perfil de medios en Baserow
+                        try {
+                            const baserowId = parseInt(id.replace('baserow_media_', ''));
+                            await updateMediaProfileInBaserow(baserowId, newProfileData);
+                            
+                            // Recargar perfiles desde Baserow para actualizar la lista
+                            await loadBaserowMediaProfiles();
+                            renderSelectors();
+                            hideProfileModal();
+                            
+                            // Mostrar SweetAlert de éxito
+                            Swal.fire({
+                                title: '¡Perfil Actualizado!',
+                                text: `El perfil de medios "${newProfileData.name}" ha sido actualizado exitosamente en la base de datos.`,
+                                icon: 'success',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#a3e635'
+                            });
+                            return;
+                        } catch (error) {
+                            // Mostrar SweetAlert de error
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error al actualizar el perfil de medios en la base de datos: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#ef4444'
+                            });
+                            return;
+                        }
+                    }
+                }
+
+                // Lógica para perfiles locales (solo actualizaciones ahora)
+                if (id && typeof id === 'number') { // Update de perfiles locales
+                    const index = savedProfiles[type].findIndex(p => p.id === id);
+                    if (index !== -1) {
+                        savedProfiles[type][index] = { ...savedProfiles[type][index], ...newProfileData };
+                        
+                        // Mostrar SweetAlert de actualización exitosa
+                        Swal.fire({
+                            title: '¡Perfil Actualizado!',
+                            text: `El perfil "${newProfileData.name}" ha sido actualizado exitosamente.`,
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            background: '#1f2937',
+                            color: '#e5e7eb',
+                            confirmButtonColor: '#a3e635'
+                        });
+                        
+                        renderSelectors();
+                        hideProfileModal();
+                    }
+                }
+            }
+
+            async function deleteProfile(type, activeId) {
+                if (activeId) {
+                    // Manejar perfiles de medios de Baserow
+                    if (type === 'medios' && typeof activeId === 'string' && activeId.startsWith('baserow_media_')) {
+                        try {
+                            // Extraer el ID numérico de Baserow
+                            const baserowId = parseInt(activeId.replace('baserow_media_', ''));
+                            
+                            // Confirmar eliminación con SweetAlert
+                            const result = await Swal.fire({
+                                title: '¿Eliminar Perfil?',
+                                text: '¿Estás seguro de que deseas eliminar este perfil de medios? Esta acción no se puede deshacer.',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, eliminar',
+                                cancelButtonText: 'Cancelar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#ef4444',
+                                cancelButtonColor: '#4b5563'
+                            });
+                            
+                            if (result.isConfirmed) {
+                                // Eliminar el perfil de Baserow
+                                await deleteMediaProfileFromBaserow(baserowId);
+                                
+                                // Recargar perfiles desde Baserow para actualizar la lista
+                                await loadBaserowMediaProfiles();
+                                
+                                // Actualizar el perfil activo si es necesario
+                                if (activeMediaProfileId === activeId) {
+                                    // Si hay perfiles de medios en Baserow, seleccionar el primero
+                                    if (baserowMediaProfiles.length > 0) {
+                                        activeMediaProfileId = `baserow_media_${baserowMediaProfiles[0].id}`;
+                                    } else {
+                                        // Si no hay perfiles de medios, establecer como null
+                                        activeMediaProfileId = null;
+                                    }
+                                }
+                                
+                                // Actualizar la interfaz
+                                renderSelectors();
+                                
+                                // Mostrar mensaje de éxito
+                                Swal.fire({
+                                    title: 'Perfil Eliminado',
+                                    text: 'El perfil de medios ha sido eliminado exitosamente de la base de datos.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Aceptar',
+                                    background: '#1f2937',
+                                    color: '#e5e7eb',
+                                    confirmButtonColor: '#a3e635'
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Error al eliminar perfil de medios:', error);
+                            
+                            // Mostrar mensaje de error
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error al eliminar el perfil de medios: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    }
+                    // Manejar perfiles creativos de Baserow
+                    else if (type === 'creativo' && typeof activeId === 'string' && activeId.startsWith('baserow_')) {
+                        try {
+                            // Extraer el ID numérico de Baserow
+                            const baserowId = parseInt(activeId.replace('baserow_', ''));
+                            
+                            // Confirmar eliminación con SweetAlert
+                            const result = await Swal.fire({
+                                title: '¿Eliminar Perfil?',
+                                text: '¿Estás seguro de que deseas eliminar este perfil creativo? Esta acción no se puede deshacer.',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, eliminar',
+                                cancelButtonText: 'Cancelar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#ef4444',
+                                cancelButtonColor: '#4b5563'
+                            });
+                            
+                            if (result.isConfirmed) {
+                                // Eliminar el perfil de Baserow
+                                await deleteCreativeProfileFromBaserow(baserowId);
+                                
+                                // Recargar perfiles desde Baserow para actualizar la lista
+                                await loadBaserowProfiles();
+                                
+                                // Actualizar el perfil activo si es necesario
+                                if (activeCreativeProfileId === activeId) {
+                                    // Si hay perfiles creativos en Baserow, seleccionar el primero
+                                    if (baserowProfiles.length > 0) {
+                                        activeCreativeProfileId = `baserow_${baserowProfiles[0].id}`;
+                                    } else {
+                                        // Si no hay perfiles creativos, establecer como null
+                                        activeCreativeProfileId = null;
+                                    }
+                                }
+                                
+                                // Actualizar la interfaz
+                                renderSelectors();
+                                
+                                // Mostrar mensaje de éxito
+                                Swal.fire({
+                                    title: 'Perfil Eliminado',
+                                    text: 'El perfil creativo ha sido eliminado exitosamente de la base de datos.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Aceptar',
+                                    background: '#1f2937',
+                                    color: '#e5e7eb',
+                                    confirmButtonColor: '#a3e635'
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Error al eliminar perfil creativo:', error);
+                            
+                            // Mostrar mensaje de error
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error al eliminar el perfil creativo: ' + error.message,
+                                icon: 'error',
+                                confirmButtonText: 'Aceptar',
+                                background: '#1f2937',
+                                color: '#e5e7eb',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    }
+                    // No manejar perfiles locales - eliminados según solicitud del usuario
+                }
+            }
+
+            // --- API & ANALYSIS ---
+            // API key status function removed - keys now loaded automatically from .env
+
+            async function buscarLicitaciones() {
+                const fechaInput = document.getElementById('search-fecha').value.trim();
+                const estado = document.getElementById('search-estado').value;
+                const organismo = document.getElementById('search-organismo').value.trim();
+                const codigo = document.getElementById('search-codigo').value.trim();
+                const mpApiStatus = document.getElementById('mp-api-status');
+                const placeholderMain = document.getElementById('placeholder-main');
+
+                // Convertir fecha de YYYY-MM-DD a DDMMYYYY para la API
+                let fecha = '';
+                if (fechaInput) {
+                    const [year, month, day] = fechaInput.split('-');
+                    fecha = `${day}${month}${year}`;
+                }
+
+                let params = new URLSearchParams();
+                if (codigo) params.append('codigo', codigo);
+                if (fecha) params.append('fecha', fecha);
+                if (estado && !codigo) params.append('estado', estado);
+                if (organismo) params.append('CodigoOrganismo', organismo);
+
+                if (params.toString() === "") {
+                    mpApiStatus.textContent = 'Debes ingresar al menos un criterio de búsqueda.';
+                    return;
+                }
+
+                // Mostrar loading en el placeholder
+                placeholderMain.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-96">
+                        <div class="loader mb-4"></div>
+                        <p class="text-gray-300 text-lg">Buscando licitaciones...</p>
+                    </div>
+                `;
+
+                buscarBtn.textContent = 'BUSCANDO...';
+                buscarBtn.disabled = true;
+                mpApiStatus.textContent = '';
+
+                try {
+                    const url = `https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.jsonp?ticket=${mercadoPublicoApiKey}&${params.toString()}&callback=procesarResultadosBusqueda`;
+                    const script = document.createElement('script');
+                    script.src = url;
+                    document.body.appendChild(script);
+                    script.onerror = () => { throw new Error("Error de red al contactar la API de Mercado Público."); };
+                } catch (error) {
+                    // Restaurar el texto original del placeholder en caso de error
+                    placeholderMain.innerHTML = `<p class="text-gray-400 text-lg">Realiza una búsqueda para comenzar a analizar licitaciones.</p>`;
+                    
+                    mpApiStatus.textContent = `Error: ${error.message}`;
+                    buscarBtn.textContent = 'BUSCAR LICITACIONES';
+                    buscarBtn.disabled = false;
+                }
+            }
+
+            function renderSearchResults(licitaciones) {
+                const resultsContainer = document.getElementById('search-results-content');
+                if (licitaciones.length === 0) {
+                    resultsContainer.innerHTML = '<p class="text-gray-400 text-center py-4">No se encontraron licitaciones con los criterios seleccionados.</p>';
+                    return;
+                }
+
+                let tableHtml = `<table class="w-full text-sm text-left text-gray-400 table-fixed">
+            <thead class="text-xs text-gray-300 uppercase bg-gray-700">
+                <tr>
+                    <th scope="col" class="px-6 py-3 w-[65%]">Nombre</th>
+                    <th scope="col" class="px-6 py-3 w-[20%]">Fecha Cierre</th>
+                    <th scope="col" class="px-6 py-3 w-[15%]">Acción</th>
+                </tr>
+            </thead><tbody>`;
+
+                licitaciones.forEach(licitacion => {
+                    tableHtml += `<tr class="bg-gray-800 border-b border-gray-700 result-row hover:bg-gray-700/50">
+                <th scope="row" class="px-6 py-4 font-medium text-white break-words">${licitacion.Nombre}</th>
+                <td class="px-6 py-4">${new Date(licitacion.FechaCierre).toLocaleDateString('es-CL')}</td>
+                <td class="px-6 py-4">
+                    <button class="analizar-licitacion-btn bg-lime-800/70 text-lime-300 px-3 py-1 rounded-md hover:bg-lime-700/90 font-semibold" data-codigo="${licitacion.CodigoExterno}">Analizar</button>
+                </td>
+            </tr>`;
+                });
+                tableHtml += '</tbody></table>';
+                resultsContainer.innerHTML = tableHtml;
+
+                document.querySelectorAll('.analizar-licitacion-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const codigo = button.dataset.codigo;
+                        runFullAnalysis(codigo);
+                        searchResultsModal.style.display = 'none';
+                    });
+                });
+            }
+
+            window.procesarResultadosBusqueda = (data) => {
+                const mpApiStatus = document.getElementById('mp-api-status');
+                const placeholderMain = document.getElementById('placeholder-main');
+                currentSearchResults = data.Listado || [];
+                renderSearchResults(currentSearchResults);
+
+                // Restaurar el texto original del placeholder
+                placeholderMain.innerHTML = `<p class="text-gray-400 text-lg">Realiza una búsqueda para comenzar a analizar licitaciones.</p>`;
+
+                searchResultsModal.style.display = 'flex';
+                mpApiStatus.textContent = `${data.Cantidad} resultados encontrados.`;
+                buscarBtn.textContent = 'BUSCAR LICITACIONES';
+                buscarBtn.disabled = false;
+
+                const scripts = document.querySelectorAll('script[src*="mercadopublico.cl"]');
+                scripts.forEach(s => s.remove());
+            }
+
+            function filterResults() {
+                const filterNombreText = filterNombreInput.value.toLowerCase();
+                const filteredData = currentSearchResults.filter(licitacion => {
+                    return licitacion.Nombre.toLowerCase().includes(filterNombreText);
+                });
+                renderSearchResults(filteredData);
+            }
+
+            async function runFullAnalysis(codigo) {
+                document.getElementById('placeholder-main').classList.add('hidden');
+                document.getElementById('analisis-section').classList.remove('hidden');
+                document.getElementById('licitacion-analizada-id').textContent = `ID: ${codigo}`;
+
+                const iaContainer = document.getElementById('ia-analysis-container-api');
+                iaContainer.innerHTML = `<div class="flex justify-center items-center py-10"><div class="loader"></div><p class="ml-4 text-gray-300">Obteniendo datos y analizando...</p></div>`;
+
+                try {
+                    const script = document.createElement('script');
+                    script.src = `https://api.mercadopublico.cl/servicios/v1/publico/licitaciones.jsonp?codigo=${codigo}&ticket=${mercadoPublicoApiKey}&callback=procesarAnalisisCompleto`;
+                    document.body.appendChild(script);
+                    script.onerror = () => { throw new Error("No se pudo cargar la información detallada de la licitación."); };
+                } catch (error) {
+                    iaContainer.innerHTML = `<p class="text-red-400 text-center py-8">Error: ${error.message}</p>`;
+                }
+            }
+
+            window.procesarAnalisisCompleto = async (data) => {
+                if (data.Cantidad === 0) {
+                    document.getElementById('ia-analysis-container-api').innerHTML = `<p class="text-red-400 text-center py-8">No se pudo obtener el detalle de la licitación.</p>`;
+                    return;
+                }
+
+                const licitacionData = data.Listado[0];
+                document.getElementById('licitacion-analizada-nombre').textContent = licitacionData.Nombre;
+                document.getElementById('licitacion-analizada-cliente').textContent = `Cliente: ${licitacionData.Comprador?.NombreOrganismo || 'No especificado'}`;
+                document.getElementById('ia-analysis-container-file').innerHTML = '<p class="text-gray-400 text-center py-8">Los resultados del análisis del archivo aparecerán aquí.</p>';
+
+                if (licitacionData.CodigoExterno) {
+                    verEnMpLink.href = `https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?idlicitacion=${licitacionData.CodigoExterno}`;
+                    verEnMpLink.classList.remove('hidden');
+                } else {
+                    verEnMpLink.classList.add('hidden');
+                }
+
+                const briefText = `Nombre: ${licitacionData.Nombre}. Descripción: ${licitacionData.Descripcion}. Comprador: ${licitacionData.Comprador?.NombreOrganismo}`;
+                await runAnalisisPrevio(briefText, licitacionData, 'api');
+
+                if (analisisCompletoBrief) {
+                    runAnalisisCalce();
+                    runDecisionFinal();
+                }
+
+                switchTab('tab1');
+
+                const scripts = document.querySelectorAll('script[src*="mercadopublico.cl"]');
+                scripts.forEach(s => s.remove());
+            }
+
+            async function callGeminiAPI(prompt) {
+                if (!geminiApiKey) {
+                    throw new Error("La clave de API de Gemini no está configurada.");
+                }
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    console.error("API Error:", errorBody);
+                    throw new Error(`Error de la API de Gemini: ${errorBody.error?.message || response.statusText}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates[0].content.parts[0].text) {
+                    const rawText = result.candidates[0].content.parts[0].text;
+                    // Clean the response to ensure it's valid JSON
+                    const jsonText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    try {
+                        return JSON.parse(jsonText);
+                    } catch (e) {
+                        console.error("Failed to parse JSON from Gemini:", jsonText);
+                        throw new Error("La respuesta de la IA no es un JSON válido.");
+                    }
+                } else {
+                    throw new Error("Respuesta inesperada de la API de Gemini.");
+                }
+            }
+
+            function generarRecomendacionHTML(isFinal = false) {
+                if (!analisisCompletoBrief) return '';
+
+                let overallScore = 0;
+                if (calceResult.totalChecks > 0) {
+                    overallScore += (calceResult.passCount / calceResult.totalChecks) * 40;
+                } else {
+                    overallScore += 20;
+                }
+                if (afinidadResult.totalObjectives > 0) {
+                    overallScore += (afinidadResult.score / afinidadResult.totalObjectives) * 40;
+                }
+                if (analisisCompletoBrief.ponderaciones.tecnico > 60) {
+                    overallScore += 20;
+                }
+                overallScore = Math.min(100, Math.round(overallScore));
+
+                let recommendationText = '';
+                if (calceResult.totalChecks > 0 && calceResult.passCount < calceResult.totalChecks) {
+                    recommendationText = `<strong class="text-red-400">NO POSTULAR (REQUISITOS NO CUMPLIDOS)</strong>`;
+                } else if (overallScore >= 75) {
+                    recommendationText = `<strong class="text-green-400">POSTULAR</strong>`;
+                } else if (overallScore >= 50) {
+                    recommendationText = `<strong class="text-yellow-400">EVALUAR CON CAUTELA</strong>`;
+                } else {
+                    recommendationText = `<strong class="text-red-400">NO POSTULAR</strong>`;
+                }
+
+                const title = isFinal ? 'Recomendación Final de la IA' : 'Recomendación Preliminar de la IA';
+                const textSize = isFinal ? 'text-2xl font-extrabold' : 'text-xl font-bold';
+
+                return `
+            <h3 class="font-semibold text-lime-300 mb-2">${title}</h3>
+            <p class="${textSize} leading-snug mt-1">${recommendationText}</p>
+            <p class="text-base text-gray-400 mt-1">Nivel de confianza: ${overallScore}%</p>
+        `;
+            }
+
+            async function runAnalisisPrevio(briefText, licitacionData = {}, source = 'api') {
+                const containerId = source === 'api' ? 'ia-analysis-container-api' : 'ia-analysis-container-file';
+                const container = document.getElementById(containerId);
+                container.innerHTML = `<div class="flex justify-center items-center py-10"><div class="loader"></div><p class="ml-4 text-gray-300">La IA está analizando el brief...</p></div>`;
+
+                // Only reset the full brief analysis if it's an API call
+                if (source === 'api') {
+                    analisisCompletoBrief = null;
+                }
+
+                const prompt = `
+            Eres un experto analista de licitaciones públicas en Chile. Analiza el siguiente texto de un 'brief' o 'bases de licitación'. Extrae toda la información relevante y responde EXCLUSIVAMENTE en formato JSON. No incluyas texto fuera del objeto JSON.
+
+            La estructura JSON debe ser la siguiente:
+            {
+                "nombre_cliente": "No especificado",
+                "ponderaciones": { "tecnico": 0, "economico": 0, "administrativo": 0 },
+                "presupuesto_medios": 0,
+                "presupuesto_creativo": 0,
+                "requisitos": {
+                    "experienciaRequerida": [],
+                    "capacidadesRequeridas": [],
+                    "herramientasRequeridas": [],
+                    "politicasRequeridas": []
+                },
+                "objetivos": [],
+                "periodo": "No especificado",
+                "medios_soportes": [],
+                "kpis": [],
+                "analisisCualitativo": {
+                    "analisis_sesgos": "No se pudo determinar.",
+                    "conclusion_ia": "No se pudo determinar.",
+                    "fortalezas_clave": [],
+                    "debilidades_riesgos": [],
+                    "consideraciones_estrategicas": []
+                }
+            }
+
+            Instrucciones:
+            - Identifica el nombre de la institución o empresa que llama a la licitación y ponlo en "nombre_cliente".
+            - Rellena los campos numéricos de ponderaciones, presupuesto_medios y presupuesto_creativo con valores extraídos del texto. Si no encuentras, déjalos en 0.
+            - Rellena los arrays de strings con los elementos correspondientes. Si no encuentras, déjalos como arrays vacíos [].
+            - Rellena los campos de "analisisCualitativo" con tus conclusiones basadas en el texto.
+            - Extrae los objetivos, periodo de la campaña, medios o soportes solicitados y los KPIs.
+
+            Texto del Brief: """${briefText}"""
+        `;
+
+                try {
+                    const aiAnalysis = await callGeminiAPI(prompt);
+
+                    const currentAnalysis = {
+                        ...aiAnalysis,
+                        nombre: licitacionData.Nombre || 'Análisis de Archivo',
+                        cliente: licitacionData.Comprador?.NombreOrganismo || aiAnalysis.nombre_cliente,
+                        descripcion: licitacionData.Descripcion || briefText.substring(0, 200) + '...',
+                        requisitos: {
+                            ...aiAnalysis.requisitos,
+                            experienciaMontoMin: licitacionData.MontoEstimado || 0,
+                            garantias: licitacionData.TomaRazon === "1"
+                        }
+                    };
+
+                    // Store the analysis result globally
+                    analisisCompletoBrief = currentAnalysis;
+
+                    if (source === 'file') {
+                        document.getElementById('licitacion-analizada-nombre').textContent = 'Análisis de Archivo';
+                        document.getElementById('licitacion-analizada-cliente').textContent = `Cliente: ${analisisCompletoBrief.cliente}`;
+                        document.getElementById('licitacion-analizada-id').textContent = `Archivo: ${briefFileInput.files[0].name}`;
+                        verEnMpLink.classList.add('hidden');
+                    }
+
+                    runAnalisisCalce(); // Run calce to get the score for recommendation
+                    const recomendacionHtml = generarRecomendacionHTML(false);
+                    const qual = analisisCompletoBrief.analisisCualitativo;
+
+                    container.innerHTML = `
+                <div class="border-b border-gray-700 pb-4">
+                    <h3 class="font-semibold text-gray-200">Análisis de Sesgos y Direccionamiento</h3>
+                    <p class="text-sm text-gray-400">${qual.analisis_sesgos}</p>
+                </div>
+                <div class="pt-4">
+                    <h3 class="font-semibold text-lime-300">Conclusión Preliminar de la IA</h3>
+                    <p class="text-sm text-lime-400 mt-1">${qual.conclusion_ia}</p>
+                </div>
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    ${recomendacionHtml}
+                </div>
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <h3 class="font-semibold text-gray-200">Ponderaciones</h3>
+                    <p class="text-sm text-gray-400 mt-1"><strong>Técnico:</strong> ${analisisCompletoBrief.ponderaciones.tecnico}%</p>
+                    <p class="text-sm text-gray-400 mt-1"><strong>Económico:</strong> ${analisisCompletoBrief.ponderaciones.economico}%</p>
+                    <p class="text-sm text-gray-400 mt-1"><strong>Administrativo:</strong> ${analisisCompletoBrief.ponderaciones.administrativo}%</p>
+                </div>
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <h3 class="font-semibold text-gray-200">Presupuestos Identificados</h3>
+                    <p class="text-sm text-gray-400 mt-1"><strong>Medios:</strong> ${analisisCompletoBrief.presupuesto_medios > 0 ? '$' + analisisCompletoBrief.presupuesto_medios.toLocaleString('es-CL') : 'No especificado'}</p>
+                    <p class="text-sm text-gray-400 mt-1"><strong>Creativo:</strong> ${analisisCompletoBrief.presupuesto_creativo > 0 ? '$' + analisisCompletoBrief.presupuesto_creativo.toLocaleString('es-CL') : 'No especificado'}</p>
+                </div>
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <h3 class="font-semibold text-gray-200">Objetivos de la Licitación</h3>
+                    <ul class="list-disc list-inside text-sm text-gray-400 mt-2 space-y-1">
+                        ${analisisCompletoBrief.objetivos.length > 0 ? analisisCompletoBrief.objetivos.map(o => `<li>${o}</li>`).join('') : '<li>No se especificaron objetivos.</li>'}
+                    </ul>
+                </div>
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <h3 class="font-semibold text-gray-200">Periodo y Fechas Clave</h3>
+                    <p class="text-sm text-gray-400 mt-1">${analisisCompletoBrief.periodo} ${licitacionData.FechaCierre ? `(Cierre: ${new Date(licitacionData.FechaCierre).toLocaleDateString('es-CL')})` : ''}</p>
+                </div>
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <h3 class="font-semibold text-gray-200">Medios y Soportes Solicitados</h3>
+                    <ul class="list-disc list-inside text-sm text-gray-400 mt-2 space-y-1">
+                        ${analisisCompletoBrief.medios_soportes.length > 0 ? analisisCompletoBrief.medios_soportes.map(m => `<li>${m}</li>`).join('') : '<li>No se especificaron medios/soportes.</li>'}
+                    </ul>
+                </div>
+                <div class="border-t border-gray-700 pt-4 mt-4">
+                    <h3 class="font-semibold text-gray-200">KPIs Exigidos</h3>
+                    <ul class="list-disc list-inside text-sm text-gray-400 mt-2 space-y-1">
+                        ${analisisCompletoBrief.kpis.length > 0 ? analisisCompletoBrief.kpis.map(k => `<li>${k}</li>`).join('') : '<li>No se especificaron KPIs.</li>'}
+                    </ul>
+                </div>
+            `;
+
+                    runAnalisisCalce();
+                    runDecisionFinal();
+
+                } catch (error) {
+                    container.innerHTML = `<p class="text-red-400 text-center py-8">Error en el análisis de IA: ${error.message}. Verifica tu clave API y la consola para más detalles.</p>`;
+                    console.error("Error processing AI response:", error);
+                    analisisCompletoBrief = null;
+                }
+            }
+
+            function runAnalisisCalce() {
+                if (!analisisCompletoBrief) {
+                    document.getElementById('calce-container').innerHTML = '<p class="text-gray-400 text-center py-8">Realiza un análisis previo para ver los resultados de calce.</p>';
+                    return;
+                }
+
+                const container = document.getElementById('calce-container');
+                container.innerHTML = '';
+                const tipoLicitacion = document.getElementById('tipo-licitacion').value;
+                const creativeProfile = savedProfiles.creativo.find(p => p.id === activeCreativeProfileId);
+                const mediaProfile = savedProfiles.medios.find(p => p.id === activeMediaProfileId);
+                const requisitos = analisisCompletoBrief.requisitos;
+
+                let checks = [];
+                if ((tipoLicitacion === 'creatividad' || tipoLicitacion === 'integral') && creativeProfile) {
+                    if (requisitos.experienciaMontoMin > 0) checks.push({ label: "[Creativo] Monto Mínimo", success: creativeProfile.montoMaximo >= requisitos.experienciaMontoMin, detail: `Requerido: $${requisitos.experienciaMontoMin.toLocaleString('es-CL')}, Perfil: $${creativeProfile.montoMaximo.toLocaleString('es-CL')}` });
+                    if (requisitos.garantias) checks.push({ label: "[Creativo] Garantías", success: creativeProfile.tieneGarantia, detail: `Requerido: Sí, Perfil: ${creativeProfile.tieneGarantia ? 'Sí' : 'No'}` });
+                    if (requisitos.experienciaRequerida.length > 0) checks.push({ label: "[Creativo] Experiencia", success: requisitos.experienciaRequerida.every(req => creativeProfile.experiencia.includes(req)), detail: `Requerido: ${requisitos.experienciaRequerida.join(', ')}` });
+                }
+                if ((tipoLicitacion === 'medios' || tipoLicitacion === 'integral') && mediaProfile) {
+                    if (requisitos.herramientasRequeridas.length > 0) checks.push({ label: "[Medios] Herramientas", success: requisitos.herramientasRequeridas.every(req => mediaProfile.herramientas.includes(req)), detail: `Requerido: ${requisitos.herramientasRequeridas.join(', ')}` });
+                }
+
+                calceResult.passCount = checks.filter(c => c.success).length;
+                calceResult.totalChecks = checks.length;
+
+                if (checks.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-center py-4">No se encontraron requisitos específicos para analizar o no se seleccionó un perfil aplicable.</p>';
+                    return;
+                }
+
+                checks.forEach(c => container.innerHTML += createChecklistItem(c.label, c.success, c.detail));
+                const finalScore = calceResult.totalChecks > 0 ? (calceResult.passCount / calceResult.totalChecks) * 100 : 100;
+                container.innerHTML += `<div class="mt-4 p-4 rounded-lg ${finalScore === 100 ? 'bg-green-800/30 text-green-300' : 'bg-red-800/30 text-red-300'}"><strong>Resultado: ${finalScore === 100 ? 'Calificación Óptima' : 'No Calificamos'}</strong> (${calceResult.passCount}/${calceResult.totalChecks})</div>`;
+            }
+
+            async function runAnalisisEstrategia() {
+                const container = document.getElementById('afinidad-estrategica-container');
+                const strategyText = strategyTextInput.value.trim();
+                const statusEl = document.getElementById('strategy-analysis-status');
+
+                if (!analisisCompletoBrief) {
+                    statusEl.textContent = "Primero debes analizar un brief.";
+                    statusEl.className = 'text-xs mt-2 text-red-400';
+                    return;
+                }
+
+                if (!strategyText) {
+                    statusEl.textContent = "Por favor, pega el contenido de tu estrategia o sube un archivo.";
+                    statusEl.className = 'text-xs mt-2 text-yellow-400';
+                    return;
+                }
+
+                container.innerHTML = '<div class="flex justify-center items-center py-10"><div class="loader"></div></div>';
+                statusEl.textContent = 'Analizando...';
+                statusEl.className = 'text-xs mt-2 text-gray-400';
+
+                const prompt = `
+            Analiza la siguiente propuesta estratégica en relación con los objetivos del brief.
+            Objetivos del Brief: ${analisisCompletoBrief.objetivos.join(', ')}.
+            Propuesta Estratégica: ${strategyText}
+            Responde en formato JSON con la estructura:
+            {
+                "objetivos_analizados": [ { "objetivo": "string", "abordado": true/false, "detalle": "string" } ],
+                "conclusion_afinidad": "string",
+                "porcentaje_afinidad": 0
+            }
+        `;
+
+                try {
+                    const result = await callGeminiAPI(prompt);
+                    container.innerHTML = '';
+                    let passCount = 0;
+                    result.objetivos_analizados.forEach(item => {
+                        container.innerHTML += createChecklistItem(`Objetivo: "${item.objetivo}"`, item.abordado, item.detalle);
+                        if (item.abordado) passCount++;
+                    });
+                    afinidadResult = { score: passCount, totalObjectives: result.objetivos_analizados.length };
+                    container.innerHTML += `<div class="mt-4 p-4 rounded-lg bg-lime-800/30 text-lime-300"><strong>Afinidad: ${result.porcentaje_afinidad}%.</strong> ${result.conclusion_afinidad}</div>`;
+                    statusEl.textContent = 'Análisis completado.';
+                    statusEl.className = 'text-xs mt-2 text-green-400';
+                    runDecisionFinal();
+                } catch (error) {
+                    container.innerHTML = `<p class="text-red-400 text-center py-8">Error: ${error.message}</p>`;
+                    statusEl.textContent = 'Error en el análisis.';
+                    statusEl.className = 'text-xs mt-2 text-red-400';
+                }
+            }
+
+            function runDecisionFinal() {
+                if (!analisisCompletoBrief) {
+                    document.getElementById('final-decision-container').innerHTML = '<p class="text-gray-400 text-center py-8">Realiza un análisis previo para ver la recomendación final.</p>';
+                    return;
+                }
+
+                const container = document.getElementById('final-decision-container');
+                const qual = analisisCompletoBrief.analisisCualitativo;
+                const recomendacionHtml = generarRecomendacionHTML(true);
+
+                container.innerHTML = `
+            <h3 class="text-xl font-semibold text-white">Resumen de Puntos Clave:</h3>
+            <ul id="decision-summary-list" class="list-disc list-inside text-base text-gray-400 space-y-2 pl-4">
+                <li><strong>Análisis Previo (IA):</strong> ${qual.conclusion_ia || 'Pendiente.'}</li>
+                <li><strong>Calce de Requisitos:</strong> ${calceResult.totalChecks > 0 ? `${calceResult.passCount}/${calceResult.totalChecks} cumplidos.` : 'Pendiente.'}</li>
+                <li><strong>Afinidad Estratégica:</strong> ${afinidadResult.totalObjectives > 0 ? `${((afinidadResult.score / afinidadResult.totalObjectives) * 100).toFixed(0)}%` : 'Pendiente.'}</li>
+            </ul>
+            <div class="border-t border-gray-700 pt-6">
+                ${recomendacionHtml}
+            </div>
+            <div id="detailed-ai-analysis" class="space-y-4 mt-6">
+                <h4 class="text-xl font-semibold text-white">Análisis Detallado de la IA:</h4>
+                <div id="ai-strengths" class="p-4 rounded-lg border">
+                    <h5 class="font-bold text-green-400 text-lg">Fortalezas Clave:</h5>
+                    <ul class="list-disc list-inside text-sm text-green-300 space-y-1 pl-4">${(qual.fortalezas_clave || []).map(s => `<li>${s}</li>`).join('') || '<li>No se identificaron fortalezas.</li>'}</ul>
+                </div>
+                <div id="ai-weaknesses" class="p-4 rounded-lg border">
+                    <h5 class="font-bold text-red-400 text-lg">Debilidades y Riesgos:</h5>
+                    <ul class="list-disc list-inside text-sm text-red-300 space-y-1 pl-4">${(qual.debilidades_riesgos || []).map(w => `<li>${w}</li>`).join('') || '<li>No se identificaron debilidades.</li>'}</ul>
+                </div>
+                <div id="ai-strategic-advice" class="p-4 rounded-lg border">
+                    <h5 class="font-bold text-blue-400 text-lg">Consideraciones Estratégicas:</h5>
+                    <ul class="list-disc list-inside text-sm text-blue-300 space-y-1 pl-4">${(qual.consideraciones_estrategicas || []).map(a => `<li>${a}</li>`).join('') || '<li>No se identificaron consideraciones.</li>'}</ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-6">
+                <h3 class="text-xl font-semibold text-white mb-2">Decisión de la Agencia</h3>
+                <textarea id="agency-decision-notes" class="w-full h-28" placeholder="Ingresa tus comentarios...">${agencyDecisionText}</textarea>
+                <button id="save-agency-decision-btn" class="mt-4 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-700">Guardar Decisión</button>
+                <p id="agency-decision-status" class="text-xs mt-2 text-gray-400"></p>
+            </div>
+        `;
+                document.getElementById('save-agency-decision-btn').addEventListener('click', () => {
+                    agencyDecisionText = document.getElementById('agency-decision-notes').value.trim();
+                    localStorage.setItem('agencyDecisionNotes', agencyDecisionText);
+                    document.getElementById('agency-decision-status').textContent = 'Decisión guardada.';
+                    setTimeout(() => document.getElementById('agency-decision-status').textContent = '', 3000);
+                });
+            }
+
+            function createChecklistItem(label, success, detail) {
+                const icon = success
+                    ? `<svg class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+                    : `<svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+                return `<div class="flex items-start p-3 bg-gray-700/50 rounded-lg"><div class="flex-shrink-0 mt-0.5">${icon}</div><div class="ml-3"><p class="text-sm font-semibold text-white">${label}</p><p class="text-sm text-gray-400">${detail}</p></div></div>`;
+            }
+
+            function switchTab(targetTabId) {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                document.querySelector(`[data-tab="${targetTabId}"]`).classList.add('active');
+                document.getElementById(targetTabId).classList.add('active');
+            }
+
+            // --- FILE PARSING LOGIC ---
+            async function parseFile(file) {
+                const extension = file.name.split('.').pop().toLowerCase();
+                const reader = new FileReader();
+
+                return new Promise((resolve, reject) => {
+                    if (extension === 'pdf') {
+                        reader.onload = async (e) => {
+                            try {
+                                const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
+                                let text = '';
+                                for (let i = 1; i <= pdf.numPages; i++) {
+                                    const page = await pdf.getPage(i);
+                                    const content = await page.getTextContent();
+                                    text += content.items.map(item => item.str).join(' ');
+                                }
+                                resolve(text);
+                            } catch (error) {
+                                reject('Error al procesar el PDF.');
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    } else if (extension === 'pptx') {
+                        reader.onload = async (e) => {
+                            try {
+                                const zip = await JSZip.loadAsync(e.target.result);
+                                const slideFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/slides/slide'));
+                                let text = '';
+                                for (const slideFile of slideFiles) {
+                                    const slideContent = await zip.file(slideFile).async('string');
+                                    const parser = new DOMParser();
+                                    const xmlDoc = parser.parseFromString(slideContent, "application/xml");
+                                    const textNodes = xmlDoc.getElementsByTagName('a:t');
+                                    for (let i = 0; i < textNodes.length; i++) {
+                                        text += textNodes[i].textContent + ' ';
+                                    }
+                                }
+                                resolve(text);
+                            } catch (error) {
+                                reject('Error al procesar el PPTX.');
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    } else { // txt, md
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsText(file);
+                    }
+                    reader.onerror = () => reject('Error al leer el archivo.');
+                });
+            }
+
+            // --- ORGANISM LOOKUP LOGIC ---
+            function renderOrganismLookup(organisms) {
+                organismLookupResults.innerHTML = '';
+                if (organisms.length === 0) {
+                    organismLookupResults.innerHTML = '<p class="text-gray-400 text-center py-4">No se encontraron organismos.</p>';
+                    return;
+                }
+                const list = document.createElement('ul');
+                list.className = 'space-y-2';
+                organisms.forEach(org => {
+                    const item = document.createElement('li');
+                    item.className = 'p-3 bg-gray-800 rounded-lg hover:bg-gray-700 cursor-pointer';
+                    item.textContent = `${org.name} (Código: ${org.code})`;
+                    item.addEventListener('click', () => {
+                        document.getElementById('search-organismo').value = org.code;
+                        organismLookupModal.style.display = 'none';
+                    });
+                    list.appendChild(item);
+                });
+                organismLookupResults.appendChild(list);
+            }
+
+            // --- EVENT LISTENERS ---
+            creativeProfileSelector.addEventListener('change', e => { 
+                activeCreativeProfileId = e.target.value.includes('baserow_') ? e.target.value : parseInt(e.target.value, 10); 
+                renderActiveProfileDetails(); 
+                runAnalisisCalce(); 
+                runDecisionFinal(); 
+            });
+            mediaProfileSelector.addEventListener('change', e => { 
+                activeMediaProfileId = e.target.value.includes('baserow_media_') ? e.target.value : parseInt(e.target.value, 10); 
+                renderActiveProfileDetails(); 
+                runAnalisisCalce(); 
+                runDecisionFinal(); 
+            });
+            editCreativeBtn.addEventListener('click', () => { 
+                if (activeCreativeProfileId) {
+                    if (typeof activeCreativeProfileId === 'string' && activeCreativeProfileId.startsWith('baserow_')) {
+                        // Es un perfil de Baserow, mostrar modal en modo solo lectura o con funcionalidad limitada
+                        showProfileModal('creativo', activeCreativeProfileId);
+                    } else {
+                        // Es un perfil local, funcionalidad normal
+                        showProfileModal('creativo', activeCreativeProfileId);
+                    }
+                }
+            });
+            editMediaBtn.addEventListener('click', () => { if (activeMediaProfileId) showProfileModal('medios', activeMediaProfileId); });
+            deleteCreativeBtn.addEventListener('click', () => deleteProfile('creativo', activeCreativeProfileId));
+            deleteMediaBtn.addEventListener('click', () => deleteProfile('medios', activeMediaProfileId));
+            cancelProfileBtn.addEventListener('click', hideProfileModal);
+            saveProfileBtn.addEventListener('click', saveProfile);
+
+            // API key saving removed - now loaded automatically from .env file
+
+            buscarBtn.addEventListener('click', buscarLicitaciones);
+            closeSearchResultsBtn.addEventListener('click', () => {
+                searchResultsModal.style.display = 'none';
+            });
+            filterNombreInput.addEventListener('input', filterResults);
+
+            lookupOrganismoBtn.addEventListener('click', () => {
+                organismLookupModal.style.display = 'flex';
+            });
+            closeOrganismLookupBtn.addEventListener('click', () => {
+                organismLookupModal.style.display = 'none';
+            });
+            organismLookupSearch.addEventListener('input', (e) => {
+                const searchText = e.target.value.toLowerCase();
+                const filteredOrganisms = commonOrganisms.filter(org => org.name.toLowerCase().includes(searchText));
+                renderOrganismLookup(filteredOrganisms);
+            });
+
+            analyzeStrategyBtn.addEventListener('click', runAnalisisEstrategia);
+
+            analyzeFileBtn.addEventListener('click', async () => {
+                const file = briefFileInput.files[0];
+                const statusEl = document.getElementById('file-analysis-status');
+                if (!file) {
+                    statusEl.textContent = 'Por favor, selecciona un archivo primero.';
+                    return;
+                }
+
+                document.getElementById('placeholder-main').classList.add('hidden');
+                document.getElementById('analisis-section').classList.remove('hidden');
+                statusEl.textContent = `Procesando archivo: ${file.name}...`;
+
+                document.getElementById('licitacion-analizada-nombre').textContent = 'Análisis de Archivo';
+                document.getElementById('licitacion-analizada-cliente').textContent = 'Cliente: Analizando desde archivo...';
+                document.getElementById('licitacion-analizada-id').textContent = `Archivo: ${file.name}`;
+
+                try {
+                    const text = await parseFile(file);
+                    if (text.trim() === '') {
+                        statusEl.textContent = 'No se pudo extraer texto del archivo.';
+                        return;
+                    }
+                    statusEl.textContent = 'Archivo procesado, enviando a la IA...';
+                    await runAnalisisPrevio(text, {}, 'file');
+                    switchTab('tab2');
+                    statusEl.textContent = 'Análisis de archivo completado.';
+                } catch (error) {
+                    statusEl.textContent = `Error: ${error}`;
+                    console.error(error);
+                }
+            });
+
+            strategyFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) {
+                    strategyFileStatus.textContent = '';
+                    return;
+                }
+
+                strategyFileStatus.textContent = `Procesando: ${file.name}...`;
+                strategyFileStatus.className = 'text-xs mt-2 text-gray-400';
+
+                try {
+                    const text = await parseFile(file);
+                    if (text.trim() === '') {
+                        strategyFileStatus.textContent = 'No se pudo extraer texto del archivo.';
+                        strategyFileStatus.className = 'text-xs mt-2 text-red-400';
+                        return;
+                    }
+                    strategyTextInput.value = text;
+                    strategyFileStatus.textContent = `Archivo cargado. Haz clic en analizar.`;
+                    strategyFileStatus.className = 'text-xs mt-2 text-green-400';
+                } catch (error) {
+                    strategyFileStatus.textContent = `Error: ${error}`;
+                    strategyFileStatus.className = 'text-xs mt-2 text-red-400';
+                    console.error(error);
+                }
+            });
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+
+            // --- START THE APP ---
+            initializeApp();
+        });
+    </script>
+</body>
+
+</html>

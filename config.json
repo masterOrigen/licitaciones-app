@@ -1,0 +1,8 @@
+{
+    "baserowApiUrl": "https://api.baserow.io/api/database/rows/table/697/?user_field_names=true",
+    "baserowToken": "p5V4Wy1TfWnHMBtFGQoiRXDhLjEkA8Oc",
+    "baserowMediaApiUrl": "https://api.baserow.io/api/database/rows/table/698/?user_field_names=true",
+    "baserowMediaToken": "p5V4Wy1TfWnHMBtFGQoiRXDhLjEkA8Oc",
+    "baserowUsersApiUrl": "https://api.baserow.io/api/database/rows/table/699/?user_field_names=true",
+    "baserowUsersToken": "p5V4Wy1TfWnHMBtFGQoiRXDhLjEkA8Oc"
+}
