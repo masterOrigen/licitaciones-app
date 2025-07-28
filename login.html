@@ -95,6 +95,25 @@
         // Función para cargar configuración
         async function loadConfig() {
             try {
+                // Primero intentar usar variables de entorno (para Railway/producción)
+                // En el navegador, las variables de entorno se pueden pasar a través de un endpoint o config
+                // Para Railway, necesitamos crear un endpoint que exponga las variables de entorno
+                
+                // Intentar cargar desde endpoint de variables de entorno
+                try {
+                    const envResponse = await fetch('/api/config');
+                    if (envResponse.ok) {
+                        const envConfig = await envResponse.json();
+                        baserowUsersApiUrl = envConfig.baserowUsersApiUrl;
+                        baserowUsersToken = envConfig.baserowUsersToken;
+                        console.log('Configuración cargada desde variables de entorno');
+                        return true;
+                    }
+                } catch (envError) {
+                    console.log('Variables de entorno no disponibles, intentando config.json');
+                }
+                
+                // Si no hay variables de entorno, cargar desde config.json (desarrollo local)
                 const response = await fetch('config.json');
                 if (!response.ok) {
                     throw new Error(`Error HTTP: ${response.status}`);
@@ -104,7 +123,7 @@
                 baserowUsersApiUrl = config.baserowUsersApiUrl || '';
                 baserowUsersToken = config.baserowUsersToken || '';
                 
-                console.log('Configuración cargada correctamente');
+                console.log('Configuración cargada desde config.json');
                 return true;
             } catch (error) {
                 console.error('Error cargando configuración:', error);
