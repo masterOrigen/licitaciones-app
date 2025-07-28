@@ -1,8 +1,8 @@
 {
-    "baserowApiUrl": "https://api.baserow.io/api/database/rows/table/697/?user_field_names=true",
-    "baserowToken": "p5V4Wy1TfWnHMBtFGQoiRXDhLjEkA8Oc",
-    "baserowMediaApiUrl": "https://api.baserow.io/api/database/rows/table/698/?user_field_names=true",
-    "baserowMediaToken": "p5V4Wy1TfWnHMBtFGQoiRXDhLjEkA8Oc",
-    "baserowUsersApiUrl": "https://api.baserow.io/api/database/rows/table/699/?user_field_names=true",
-    "baserowUsersToken": "p5V4Wy1TfWnHMBtFGQoiRXDhLjEkA8Oc"
+    "baserowApiUrl": "https://baserow-production-c519.up.railway.app/api/database/rows/table/697/?user_field_names=true",
+    "baserowToken": "qiZvFWCOiFebsKdbmN6zTWGxsRsxeyX0",
+    "baserowMediaApiUrl": "https://baserow-production-c519.up.railway.app/api/database/rows/table/698/?user_field_names=true",
+    "baserowMediaToken": "qiZvFWCOiFebsKdbmN6zTWGxsRsxeyX0",
+    "baserowUsersApiUrl": "https://baserow-production-c519.up.railway.app/api/database/rows/table/699/?user_field_names=true",
+    "baserowUsersToken": "qiZvFWCOiFebsKdbmN6zTWGxsRsxeyX0"
 }
